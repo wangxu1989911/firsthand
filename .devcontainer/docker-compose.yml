@@ -1,0 +1,11 @@
+# Dev-container overlay: same stack as docker-compose.yml (§8.2), with the
+# worktree bind-mounted so edits are live and the app container kept idle so
+# VS Code — not the CMD — decides when the service runs.
+services:
+  app:
+    volumes:
+      - ..:/workspace:cached
+    working_dir: /workspace
+    command: ["sleep", "infinity"]
+    environment:
+      PYTHONPATH: /workspace/src

@@ -1,0 +1,77 @@
+[project]
+name = "firsthand"
+version = "0.1.0"
+description = "An open-source, self-hosted agent that catches duplicate and related feature requests before they're filed twice."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "psycopg[binary,pool]>=3.2",
+    "pgvector>=0.3.6",
+    "redis>=5.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "pytest-cov>=6.0",
+    "httpx>=0.27",
+    "asgi-lifespan>=2.1",
+    "ruff>=0.8",
+    "mypy>=1.13",
+]
+
+[project.urls]
+Homepage = "https://github.com/wangxu1989911/firsthand"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/firsthand"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Lets tests import the shared fakes as `tests.fakes` under the `pytest` script too.
+pythonpath = ["."]
+asyncio_mode = "auto"
+markers = [
+    "integration: exercises the real Postgres/Redis containers; skipped when they are not reachable",
+]
+addopts = "-q"
+
+[tool.coverage.run]
+source = ["src/firsthand"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 100
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "\\.\\.\\.",
+]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "N", "RUF"]
+
+[tool.mypy]
+python_version = "3.11"
+packages = ["firsthand"]
+mypy_path = "src"
+strict = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
