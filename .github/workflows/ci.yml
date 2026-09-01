@@ -100,3 +100,17 @@ jobs:
           cache-to: type=gha,mode=max
       - name: Smoke-test the image
         run: docker run --rm --entrypoint python firsthand:ci -c "import firsthand; print(firsthand.__version__)"
+      # The dev stage is not on the deploy path, so nothing else would notice it
+      # rotting until someone opened the dev container and found it broken.
+      - name: Build the dev-container stage too
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: dev
+          push: false
+          load: true
+          tags: firsthand:ci-dev
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Verify the dev image has the tools it exists to provide
+        run: docker run --rm --entrypoint sh firsthand:ci-dev -c "git --version && ruff --version && pytest --version"

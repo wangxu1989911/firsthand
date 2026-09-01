@@ -8,6 +8,12 @@
 # so /workspace had no pyproject.toml and postCreateCommand failed.
 services:
   app:
+    # The dev stage from the root Dockerfile — same base as production, plus git
+    # and the dev dependencies. Production builds still get the default
+    # (`runtime`) stage, so none of this reaches the deployed image.
+    build:
+      context: .
+      target: dev
     volumes:
       - .:/workspace:cached
     working_dir: /workspace
