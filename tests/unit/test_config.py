@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
+import pathlib
+
 import pytest
 from pydantic import ValidationError
 
 from firsthand.config import Settings, get_settings
 
 
-def test_defaults_point_at_the_local_compose_stack(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.chdir("/")
+def test_defaults_point_at_the_local_compose_stack() -> None:
     settings = Settings()
     assert settings.database_url.endswith("/firsthand")
     assert settings.redis_url == "redis://localhost:6379/0"
@@ -19,7 +20,6 @@ def test_defaults_point_at_the_local_compose_stack(monkeypatch: pytest.MonkeyPat
 
 
 def test_every_setting_is_overridable_by_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.chdir("/")
     monkeypatch.setenv("FIRSTHAND_DATABASE_URL", "postgresql://u:p@db:5432/x")
     monkeypatch.setenv("FIRSTHAND_REDIS_URL", "redis://cache:6379/2")
     monkeypatch.setenv("FIRSTHAND_EMBEDDING_DIMENSIONS", "768")
@@ -43,7 +43,17 @@ def test_every_setting_is_overridable_by_env(monkeypatch: pytest.MonkeyPatch) ->
 def test_nonsense_values_fail_at_startup_not_at_first_use(
     monkeypatch: pytest.MonkeyPatch, name: str, value: str
 ) -> None:
-    monkeypatch.chdir("/")
     monkeypatch.setenv(name, value)
     with pytest.raises(ValidationError):
         get_settings()
+
+
+def test_a_dotenv_file_in_the_cwd_is_ignored(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path
+) -> None:
+    """Config comes from the environment only — never from the working directory."""
+    (tmp_path / ".env").write_text("FIRSTHAND_DATABASE_URL=postgresql://leaked@evil/db\n")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("FIRSTHAND_DATABASE_URL", raising=False)
+
+    assert "evil" not in get_settings().database_url

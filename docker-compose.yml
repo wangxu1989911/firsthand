@@ -13,7 +13,10 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U firsthand -d firsthand"]
+      # -h 127.0.0.1 on purpose: the entrypoint runs initdb against a
+      # socket-only server, so a socket probe reports ready during a window
+      # when the real TCP listener is not up yet.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U firsthand -d firsthand"]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -35,9 +38,11 @@ services:
       FIRSTHAND_DATABASE_URL: postgresql://firsthand:firsthand@db:5432/firsthand
       FIRSTHAND_REDIS_URL: redis://redis:6379/0
       FIRSTHAND_EMBEDDING_DIMENSIONS: "${FIRSTHAND_EMBEDDING_DIMENSIONS:-1536}"
+      FIRSTHAND_STATE_TTL_SECONDS: "${FIRSTHAND_STATE_TTL_SECONDS:-86400}"
       FIRSTHAND_LOG_LEVEL: "${FIRSTHAND_LOG_LEVEL:-INFO}"
     ports:
       - "8080" # ephemeral host port — `docker compose port app 8080`
+    restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy

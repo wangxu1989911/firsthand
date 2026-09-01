@@ -5,8 +5,14 @@ name: CI
 
 on:
   push:
-    branches: ["**"]
+    branches: [main]
   pull_request:
+
+# A branch push with an open PR fires both events; without this every job ran
+# twice per push and superseded runs were never cancelled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   PYTHON_VERSION: "3.11"
@@ -52,7 +58,7 @@ jobs:
           POSTGRES_DB: firsthand
         ports: ["5432:5432"]
         options: >-
-          --health-cmd "pg_isready -U firsthand -d firsthand"
+          --health-cmd "pg_isready -h 127.0.0.1 -U firsthand -d firsthand"
           --health-interval 5s --health-timeout 3s --health-retries 20
       redis:
         image: redis:7-alpine
@@ -63,6 +69,10 @@ jobs:
     env:
       FIRSTHAND_DATABASE_URL: postgresql://firsthand:firsthand@localhost:5432/firsthand
       FIRSTHAND_REDIS_URL: redis://localhost:6379/0
+      # Without this the fixtures skip on an unreachable database and pytest
+      # still exits 0 — the one job that exercises real storage would go green
+      # having exercised none of it.
+      FIRSTHAND_REQUIRE_INTEGRATION: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

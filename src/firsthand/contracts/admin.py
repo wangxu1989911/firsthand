@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Literal
 
-from pydantic import Field
+from pydantic import AwareDatetime, Field
 
 from firsthand.contracts.draft import Contract
 
@@ -24,9 +24,11 @@ class AdminUser(Contract):
     """
 
     username: str = Field(min_length=1)
-    password_hash: str = Field(min_length=1)
+    password_hash: str = Field(
+        min_length=1, repr=False, description="argon2id output — never a plaintext password"
+    )
     must_change_password: bool = False
-    created_at: datetime = Field(default_factory=_now)
+    created_at: AwareDatetime = Field(default_factory=_now)
 
 
 class ConnectorConfig(Contract):
@@ -41,4 +43,4 @@ class ConnectorConfig(Contract):
     credential: str = Field(repr=False, description="Encrypted at rest — never a plaintext token")
     enabled: bool = True
     updated_by: str = Field(min_length=1)
-    updated_at: datetime = Field(default_factory=_now)
+    updated_at: AwareDatetime = Field(default_factory=_now)

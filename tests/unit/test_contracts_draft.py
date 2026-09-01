@@ -107,3 +107,15 @@ def test_session_id_and_evidence_refs_may_not_be_blank() -> None:
         Conversation(surface="web", session_id="")
     with pytest.raises(ValidationError):
         Evidence(source="jira", ref="", snippet="x", retrieved_by="search_jira")
+
+
+def test_a_blank_extracted_value_does_not_count_as_answered(draft: IssueDraft) -> None:
+    """An extractor emitting "" for "not found" must not retire the question."""
+    draft.extracted_fields["affected_version"] = "   "
+    assert draft.recompute_missing_fields() == ["affected_version"]
+
+
+def test_evidence_must_quote_an_actual_passage() -> None:
+    """Grounding means a followable citation, not an empty one."""
+    with pytest.raises(ValidationError):
+        Evidence(source="jira", ref="PAY-1", snippet="", retrieved_by="search_jira")

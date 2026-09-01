@@ -64,5 +64,28 @@ async def test_check_reports_both_dependencies_as_ok() -> None:
 
 async def test_check_names_the_failing_dependency() -> None:
     checks = await _resources(FakePool(fail_on_connect=True), FakeRedis(fail_ping=True)).check()
-    assert checks["postgres"].startswith("error: connection refused")
-    assert checks["redis"].startswith("error: redis down")
+    assert checks == {"postgres": "error", "redis": "error"}
+
+
+async def test_check_reports_a_failure_without_naming_the_host() -> None:
+    """/readyz is unauthenticated (§8.7): the driver's message stays in the log."""
+    pool = FakePool(fail_on_connect=True)
+    pool.conn.executed.clear()
+
+    class LeakyRedis(FakeRedis):
+        async def ping(self) -> bool:
+            raise RuntimeError("Error -5 connecting to cache-prod.internal:6379")
+
+    checks = await _resources(pool, LeakyRedis()).check()
+
+    assert checks == {"postgres": "error", "redis": "error"}
+    assert "cache-prod.internal" not in str(checks)
+
+
+def test_the_redis_client_is_built_with_timeouts() -> None:
+    """Without them a half-open socket hangs the probe forever instead of failing it."""
+    resources = AppResources.from_settings(Settings(redis_timeout_seconds=2.5))
+    kwargs = resources._redis.connection_pool.connection_kwargs
+    assert kwargs["socket_timeout"] == 2.5
+    assert kwargs["socket_connect_timeout"] == 2.5
+    assert kwargs["health_check_interval"] == 30

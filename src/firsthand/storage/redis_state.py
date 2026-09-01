@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
+
+from pydantic import ValidationError
 
 from firsthand.contracts.draft import IssueDraft
 
 if TYPE_CHECKING:  # pragma: no cover - import cycle only matters to type checkers
     from redis.asyncio import Redis
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_PREFIX = "firsthand:draft"
 DEFAULT_TTL_SECONDS = 24 * 60 * 60
@@ -40,13 +45,27 @@ class RedisStateStore:
         return f"{self._prefix}:{session_id}"
 
     async def get(self, session_id: str) -> IssueDraft | None:
-        """Return the stored draft, or ``None`` if it never existed or expired."""
+        """Return the stored draft, or ``None`` if it never existed or expired.
+
+        A stored payload that no longer validates — written by a build with a
+        different `IssueDraft`, which a rolling deploy guarantees — also reads
+        back as ``None``. That starts the conversation over, which is what the
+        `StateStore` contract promises; raising here would 500 every in-flight
+        conversation mid-deploy instead (§8.3).
+        """
         raw = await self._client.get(self.key(session_id))
         if raw is None:
             return None
         if isinstance(raw, bytes):
             raw = raw.decode("utf-8")
-        return IssueDraft.model_validate_json(raw)
+        try:
+            return IssueDraft.model_validate_json(raw)
+        except ValidationError:
+            logger.warning(
+                "discarding unreadable draft for session %s — it no longer matches IssueDraft",
+                session_id,
+            )
+            return None
 
     async def set(
         self,

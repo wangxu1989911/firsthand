@@ -46,3 +46,19 @@ async def test_an_abandoned_draft_expires_on_its_own(
     await state_store.set("s-abandoned", draft, ttl_seconds=1)
     await asyncio.sleep(1.2)
     assert await state_store.get("s-abandoned") is None
+
+
+async def test_ensure_schema_is_idempotent(vector_store: PostgresVectorStore) -> None:
+    """Startup runs it on every boot, so a second call must be a no-op."""
+    await vector_store.ensure_schema()
+    await vector_store.upsert("PAY-1", [1.0, 0.0, 0.0], {})
+    assert len(await vector_store.search([1.0, 0.0, 0.0], k=1)) == 1
+
+
+async def test_a_width_change_is_caught_at_startup(vector_store: PostgresVectorStore) -> None:
+    """Verifies against real pgvector that we read the stored width correctly."""
+    from firsthand.storage import PostgresVectorStore as Store
+
+    rewidened = Store(vector_store._pool, dimensions=768, table="issue_embeddings_it")
+    with pytest.raises(RuntimeError, match=r"vector\(3\)"):
+        await rewidened.ensure_schema()

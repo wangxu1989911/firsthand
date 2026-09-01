@@ -8,7 +8,9 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# Dependencies first, so a source-only change reuses the cached layer.
+# One install step, so a source edit does re-resolve dependencies. Splitting it
+# would need a lockfile the project does not have yet; the honest comment beats
+# a cache layer that silently is not one.
 COPY pyproject.toml README.md LICENSE ./
 COPY src ./src
 RUN pip install --no-cache-dir .

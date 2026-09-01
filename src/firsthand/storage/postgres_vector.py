@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import logging
+import math
 import re
 from typing import TYPE_CHECKING, Any
 
@@ -11,7 +13,14 @@ from firsthand.storage.base import Match
 if TYPE_CHECKING:  # pragma: no cover - import cycle only matters to type checkers
     from psycopg_pool import AsyncConnectionPool
 
+logger = logging.getLogger(__name__)
+
 DEFAULT_TABLE = "issue_embeddings"
+
+#: pgvector refuses an HNSW index above this width. A wider index is still a
+#: usable table — it just falls back to an exact scan, which beats refusing to
+#: start over a configuration value the README advertises as free to set.
+MAX_HNSW_DIMENSIONS = 2000
 _IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
@@ -57,6 +66,8 @@ class PostgresVectorStore:
 
         Runs at startup rather than as a container init hook because the vector
         width comes from configuration (§8.3: config arrives via environment).
+        A table that already exists at a *different* width is the case
+        ``IF NOT EXISTS`` cannot handle, so it is checked explicitly.
         """
         async with self._pool.connection() as conn:
             await conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
@@ -67,9 +78,41 @@ class PostgresVectorStore:
                 " metadata JSONB NOT NULL DEFAULT '{}'::jsonb,"
                 " updated_at TIMESTAMPTZ NOT NULL DEFAULT now())"
             )
-            await conn.execute(
-                f"CREATE INDEX IF NOT EXISTS {self._table}_embedding_cosine_idx"
-                f" ON {self._table} USING hnsw (embedding vector_cosine_ops)"
+            await self._check_existing_width(conn)
+            if self._dimensions <= MAX_HNSW_DIMENSIONS:
+                await conn.execute(
+                    f"CREATE INDEX IF NOT EXISTS {self._table}_embedding_cosine_idx"
+                    f" ON {self._table} USING hnsw (embedding vector_cosine_ops)"
+                )
+            else:
+                logger.warning(
+                    "embedding width %d exceeds the %d-dimension HNSW limit; "
+                    "%s will use exact search instead of an index",
+                    self._dimensions,
+                    MAX_HNSW_DIMENSIONS,
+                    self._table,
+                )
+
+    async def _check_existing_width(self, conn: Any) -> None:
+        """Fail loudly at startup if the table was built for a different width.
+
+        Otherwise the mismatch surfaces on the first write, deep inside Postgres,
+        long after the deploy that caused it looked successful.
+        """
+        cursor = await conn.execute(
+            "SELECT atttypmod FROM pg_attribute"
+            " WHERE attrelid = %s::regclass AND attname = 'embedding'",
+            (self._table,),
+        )
+        rows = await cursor.fetchall()
+        if not rows:  # a driver that reports nothing tells us nothing to act on
+            return
+        existing = int(rows[0][0])
+        if existing > 0 and existing != self._dimensions:
+            raise RuntimeError(
+                f"{self._table} was created with vector({existing}) but this process is"
+                f" configured for {self._dimensions} dimensions —"
+                " re-embed into a new table rather than writing mixed widths"
             )
 
     def _validate(self, embedding: list[float]) -> str:
@@ -77,6 +120,11 @@ class PostgresVectorStore:
             raise ValueError(
                 f"embedding has {len(embedding)} dimensions, index expects {self._dimensions}"
             )
+        # A NaN or inf would serialize to a literal pgvector rejects, and a
+        # NaN distance makes the ORDER BY ranking arbitrary rather than wrong
+        # in any detectable way.
+        if not all(math.isfinite(value) for value in embedding):
+            raise ValueError("embedding contains a non-finite value")
         return to_vector_literal(embedding)
 
     async def upsert(

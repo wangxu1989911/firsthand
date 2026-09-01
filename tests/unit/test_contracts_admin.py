@@ -48,3 +48,15 @@ def test_an_admin_user_needs_a_username_and_a_hash() -> None:
         AdminUser(username="", password_hash="hash")
     with pytest.raises(ValidationError):
         AdminUser(username="admin", password_hash="")
+
+
+def test_the_password_hash_never_shows_up_in_a_repr() -> None:
+    """argon2id output is offline-crackable; it stays out of logs and tracebacks."""
+    user = AdminUser(username="admin", password_hash="$argon2id$v=19$m=65536$SECRET")
+    assert "SECRET" not in repr(user)
+
+
+def test_naive_timestamps_are_refused() -> None:
+    """A naive value can't be compared against the aware default without a TypeError."""
+    with pytest.raises(ValidationError):
+        AdminUser(username="admin", password_hash="hash", created_at=datetime(2020, 1, 1))

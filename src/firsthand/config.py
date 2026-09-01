@@ -13,12 +13,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """Everything the process needs to know, read from the environment."""
 
-    model_config = SettingsConfigDict(
-        env_prefix="FIRSTHAND_",
-        env_file=".env",
-        env_file_encoding="utf-8",
-        extra="ignore",
-    )
+    # Deliberately no env_file: reading a .env would make configuration depend
+    # on the process working directory and give a developer different results
+    # than CI. §8.3 means the environment, and nothing else.
+    model_config = SettingsConfigDict(env_prefix="FIRSTHAND_", extra="ignore")
 
     database_url: str = "postgresql://firsthand:firsthand@localhost:5432/firsthand"
     redis_url: str = "redis://localhost:6379/0"
@@ -28,6 +26,10 @@ class Settings(BaseSettings):
 
     pool_min_size: int = Field(default=1, ge=0)
     pool_max_size: int = Field(default=10, gt=0)
+
+    #: Redis has no default timeout of its own; without one a half-open socket
+    #: hangs the readiness probe forever instead of failing it.
+    redis_timeout_seconds: float = Field(default=5.0, gt=0)
 
     host: str = "0.0.0.0"
     port: int = Field(default=8080, gt=0, le=65_535)

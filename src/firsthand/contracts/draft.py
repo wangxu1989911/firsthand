@@ -47,7 +47,9 @@ class Evidence(Contract):
 
     source: EvidenceSource
     ref: str = Field(min_length=1, description="Ticket key, commit sha, or doc URL — followable")
-    snippet: str = Field(description="The actual passage the claim rests on")
+    snippet: str = Field(
+        min_length=1, description="The actual passage the claim rests on — never empty"
+    )
     retrieved_by: str = Field(min_length=1, description="Which tool call produced this")
 
 
@@ -122,7 +124,10 @@ class IssueDraft(Contract):
         orchestrator believes the gathered evidence covers, so the agent does
         not spend a round asking about something it already knows.
         """
-        covered = set(self.extracted_fields) | (inferable or set())
+        # Keyed on having an answer, not on having a key: an extractor that
+        # emits "" for "not found" must not silently retire the question.
+        covered = {name for name, value in self.extracted_fields.items() if value.strip()}
+        covered |= inferable or set()
         self.missing_fields = [field for field in self.required_fields if field not in covered]
         return self.missing_fields
 

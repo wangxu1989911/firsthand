@@ -27,8 +27,10 @@ def create_app(
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         app.state.resources = resources or AppResources.from_settings(settings)
-        await app.state.resources.open()
+        # open() inside the try: a startup that fails partway still releases
+        # whatever it managed to connect, instead of leaking it on a crash-loop.
         try:
+            await app.state.resources.open()
             yield
         finally:
             await app.state.resources.close()

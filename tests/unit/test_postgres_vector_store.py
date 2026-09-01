@@ -43,7 +43,7 @@ def test_ensure_schema_creates_extension_table_and_index() -> None:
     assert "CREATE EXTENSION IF NOT EXISTS vector" in statements[0]
     assert "CREATE TABLE IF NOT EXISTS issue_embeddings" in statements[1]
     assert "vector(3)" in statements[1]
-    assert "USING hnsw (embedding vector_cosine_ops)" in statements[2]
+    assert any("USING hnsw (embedding vector_cosine_ops)" in sql for sql in statements)
 
 
 async def test_upsert_replaces_on_conflict() -> None:
@@ -88,3 +88,35 @@ async def test_a_wrong_width_embedding_is_refused(embedding: list[float]) -> Non
 async def test_k_must_be_positive() -> None:
     with pytest.raises(ValueError, match="k must be positive"):
         await _store(FakePool()).search([0.1, 0.2, 0.3], k=0)
+
+
+async def test_a_wider_than_hnsw_index_still_builds_the_table() -> None:
+    """3072 is a real embedding width; pgvector just can't index it with HNSW."""
+    pool = FakePool()
+    await _store(pool, dimensions=3072).ensure_schema()
+
+    statements = pool.statements
+    assert any("vector(3072)" in sql for sql in statements)
+    assert not any("hnsw" in sql for sql in statements)
+
+
+async def test_a_table_built_for_another_width_fails_at_startup() -> None:
+    """Better than surfacing deep inside Postgres on the first write."""
+    pool = FakePool(rows=[(768,)])
+    with pytest.raises(RuntimeError, match="vector\\(768\\)"):
+        await _store(pool, dimensions=3).ensure_schema()
+
+
+async def test_a_matching_existing_width_is_accepted() -> None:
+    pool = FakePool(rows=[(3,)])
+    await _store(pool, dimensions=3).ensure_schema()
+    assert any("hnsw" in sql for sql in pool.statements)
+
+
+@pytest.mark.parametrize("bad", [float("nan"), float("inf")])
+async def test_a_non_finite_embedding_never_reaches_the_index(bad: float) -> None:
+    store = _store(FakePool())
+    with pytest.raises(ValueError, match="non-finite"):
+        await store.upsert("PAY-1", [0.1, 0.2, bad], {})
+    with pytest.raises(ValueError, match="non-finite"):
+        await store.search([0.1, 0.2, bad], k=1)

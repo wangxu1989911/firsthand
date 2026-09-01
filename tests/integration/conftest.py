@@ -6,6 +6,7 @@ Bring the stack up with ./scripts/dev-up.sh and point the env at it with
 
 from __future__ import annotations
 
+import os
 from collections.abc import AsyncIterator
 
 import pytest
@@ -14,6 +15,18 @@ from firsthand.config import get_settings
 from firsthand.storage import PostgresVectorStore, RedisStateStore
 
 pytestmark = pytest.mark.integration
+
+
+def _unreachable(what: str, exc: Exception) -> None:
+    """Skip locally, but fail where the databases are supposed to be there.
+
+    A skipped test still exits 0, so without this CI's integration job goes
+    green having exercised nothing at all.
+    """
+    message = f"{what} not reachable: {exc}"
+    if os.environ.get("FIRSTHAND_REQUIRE_INTEGRATION"):
+        pytest.fail(message)
+    pytest.skip(message)
 
 
 @pytest.fixture
@@ -26,7 +39,7 @@ async def pool() -> AsyncIterator[object]:
     try:
         await pool.open(wait=True, timeout=5)
     except Exception as exc:  # pragma: no cover - environment-dependent
-        pytest.skip(f"postgres not reachable: {exc}")
+        _unreachable("postgres", exc)
     try:
         yield pool
     finally:
@@ -51,7 +64,7 @@ async def state_store() -> AsyncIterator[RedisStateStore]:
         await client.ping()
     except Exception as exc:  # pragma: no cover - environment-dependent
         await client.aclose()
-        pytest.skip(f"redis not reachable: {exc}")
+        _unreachable("redis", exc)
     try:
         yield RedisStateStore(client, prefix="firsthand:it", default_ttl_seconds=60)
     finally:

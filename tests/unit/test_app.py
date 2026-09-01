@@ -58,7 +58,7 @@ async def test_readyz_is_503_when_a_dependency_is_down() -> None:
     assert response.status_code == 503
     body = response.json()
     assert body["status"] == "not_ready"
-    assert body["checks"]["redis"].startswith("error:")
+    assert body["checks"]["redis"] == "error"
 
 
 async def test_without_injected_resources_the_app_builds_its_own(
@@ -79,3 +79,20 @@ async def test_without_injected_resources_the_app_builds_its_own(
     async with LifespanManager(app):
         assert built
     assert pool.closed
+
+
+async def test_a_failed_startup_still_releases_what_was_connected() -> None:
+    """Otherwise a crash-looping container leaks a client on every restart."""
+    pool, redis = FakePool(), FakeRedis()
+
+    async def boom(wait: bool = False) -> None:
+        raise RuntimeError("postgres unreachable")
+
+    pool.open = boom  # type: ignore[method-assign]
+    app = create_app(Settings(), resources=_resources(pool, redis))
+
+    with pytest.raises(RuntimeError, match="postgres unreachable"):
+        async with LifespanManager(app):
+            pass  # pragma: no cover - startup raises before the body runs
+
+    assert redis.closed

@@ -4,4 +4,4 @@ set -euo pipefail
 
 source "$(dirname "$0")/dev-stack.sh"
 
-docker compose -p "$COMPOSE_PROJECT_NAME" down -v "$@"
+docker compose -f "$FIRSTHAND_COMPOSE_ROOT/docker-compose.yml" -p "$COMPOSE_PROJECT_NAME" down -v "$@"
