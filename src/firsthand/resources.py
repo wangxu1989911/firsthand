@@ -15,6 +15,11 @@ if TYPE_CHECKING:  # pragma: no cover - import cycle only matters to type checke
 
 logger = logging.getLogger(__name__)
 
+#: A readiness probe answers fast or not at all. Waiting the pool's default
+#: 30s means a busy-but-healthy database reads as down, every instance
+#: de-registers at once, and the load spike that caused it gets worse.
+READINESS_TIMEOUT_SECONDS = 2.0
+
 
 class AppResources:
     """Owns the connections and hands out the two §3 store interfaces."""
@@ -83,7 +88,7 @@ class AppResources:
         """
         checks: dict[str, Any] = {}
         try:
-            async with self._pool.connection() as conn:
+            async with self._pool.connection(timeout=READINESS_TIMEOUT_SECONDS) as conn:
                 await conn.execute("SELECT 1")
             checks["postgres"] = "ok"
         except Exception:

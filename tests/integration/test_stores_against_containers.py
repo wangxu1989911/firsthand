@@ -7,8 +7,6 @@ import pytest
 from firsthand.contracts import IssueDraft
 from firsthand.storage import PostgresVectorStore, RedisStateStore
 
-pytestmark = pytest.mark.integration
-
 
 async def test_similar_meaning_ranks_above_unrelated(vector_store: PostgresVectorStore) -> None:
     await vector_store.upsert("PAY-412", [1.0, 0.0, 0.0], {"title": "checkout is slow"})

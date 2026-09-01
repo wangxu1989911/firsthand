@@ -40,10 +40,20 @@ def test_ensure_schema_creates_extension_table_and_index() -> None:
     asyncio.run(store.ensure_schema())
 
     statements = pool.statements
-    assert "CREATE EXTENSION IF NOT EXISTS vector" in statements[0]
-    assert "CREATE TABLE IF NOT EXISTS issue_embeddings" in statements[1]
-    assert "vector(3)" in statements[1]
+    # The lock comes first, or the IF NOT EXISTS statements below race.
+    assert "pg_advisory_xact_lock" in statements[0]
+    assert "CREATE EXTENSION IF NOT EXISTS vector" in statements[1]
+    assert "CREATE TABLE IF NOT EXISTS issue_embeddings" in statements[2]
+    assert "vector(3)" in statements[2]
     assert any("USING hnsw (embedding vector_cosine_ops)" in sql for sql in statements)
+
+
+async def test_concurrent_starts_serialize_on_a_per_table_lock() -> None:
+    """Two tables must not serialize against each other; one table must."""
+    from firsthand.storage.postgres_vector import _advisory_lock_key
+
+    assert _advisory_lock_key("issue_embeddings") == _advisory_lock_key("issue_embeddings")
+    assert _advisory_lock_key("issue_embeddings") != _advisory_lock_key("other_table")
 
 
 async def test_upsert_replaces_on_conflict() -> None:

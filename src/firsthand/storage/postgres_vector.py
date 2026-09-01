@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import math
@@ -21,6 +22,14 @@ DEFAULT_TABLE = "issue_embeddings"
 #: usable table — it just falls back to an exact scan, which beats refusing to
 #: start over a configuration value the README advertises as free to set.
 MAX_HNSW_DIMENSIONS = 2000
+
+
+def _advisory_lock_key(table: str) -> int:
+    """A stable per-table key, so two tables never serialize against each other."""
+    digest = hashlib.blake2b(table.encode("utf-8"), digest_size=8).digest()
+    return int.from_bytes(digest, "big", signed=True)
+
+
 _IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
@@ -70,6 +79,13 @@ class PostgresVectorStore:
         ``IF NOT EXISTS`` cannot handle, so it is checked explicitly.
         """
         async with self._pool.connection() as conn:
+            # IF NOT EXISTS is not race-safe: several instances starting at once
+            # (a cold-start burst, or a crash-loop restarting) collide on the
+            # catalog's unique indexes and all but one die. The lock is held to
+            # the end of this transaction, so the losers wait and then no-op.
+            await conn.execute(
+                "SELECT pg_advisory_xact_lock(%s)", (_advisory_lock_key(self._table),)
+            )
             await conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
             await conn.execute(
                 f"CREATE TABLE IF NOT EXISTS {self._table} ("

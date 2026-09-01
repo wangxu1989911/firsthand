@@ -57,3 +57,35 @@ def test_a_dotenv_file_in_the_cwd_is_ignored(
     monkeypatch.delenv("FIRSTHAND_DATABASE_URL", raising=False)
 
     assert "evil" not in get_settings().database_url
+
+
+def test_a_misspelled_log_level_fails_at_startup_naming_the_value(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """WARN is an ordinary spelling; uvicorn only takes `warning` and dies on a KeyError."""
+    monkeypatch.setenv("FIRSTHAND_LOG_LEVEL", "WARN")
+    with pytest.raises(ValidationError):
+        get_settings()
+
+
+def test_pool_bounds_must_be_consistent(monkeypatch: pytest.MonkeyPatch) -> None:
+    """psycopg raises this deep inside from_settings; catching it here names the knob."""
+    monkeypatch.setenv("FIRSTHAND_POOL_MIN_SIZE", "20")
+    monkeypatch.setenv("FIRSTHAND_POOL_MAX_SIZE", "10")
+    with pytest.raises(ValidationError, match="pool_min_size"):
+        get_settings()
+
+
+def test_an_embedding_width_past_pgvectors_ceiling_is_refused(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """vector(20000) would fail at CREATE TABLE, after the process looked healthy."""
+    monkeypatch.setenv("FIRSTHAND_EMBEDDING_DIMENSIONS", "20000")
+    with pytest.raises(ValidationError):
+        get_settings()
+
+
+def test_a_width_above_the_hnsw_limit_is_still_allowed(monkeypatch: pytest.MonkeyPatch) -> None:
+    """3072 is text-embedding-3-large's width: indexable or not, it must boot."""
+    monkeypatch.setenv("FIRSTHAND_EMBEDDING_DIMENSIONS", "3072")
+    assert get_settings().embedding_dimensions == 3072

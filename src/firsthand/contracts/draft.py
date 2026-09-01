@@ -30,9 +30,16 @@ DraftStatus = Literal[
 
 
 class Contract(BaseModel):
-    """Base for every wire shape: strict, so a typo is a validation error."""
+    """Base for every wire shape: strict, so a typo is a validation error.
 
-    model_config = ConfigDict(extra="forbid", frozen=False)
+    ``validate_assignment`` matters as much as validation at construction here:
+    a draft is mutated across turns, and without it ``draft.round = -1`` or
+    ``draft.status = "done"`` is accepted silently, defeats the §2 round cap,
+    and then raises on the *next* container to read it back (§8.3) — the writer
+    never sees the error, the reader takes the crash.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=False, validate_assignment=True)
 
 
 class Conversation(Contract):

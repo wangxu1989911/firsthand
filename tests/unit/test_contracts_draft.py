@@ -119,3 +119,20 @@ def test_evidence_must_quote_an_actual_passage() -> None:
     """Grounding means a followable citation, not an empty one."""
     with pytest.raises(ValidationError):
         Evidence(source="jira", ref="PAY-1", snippet="", retrieved_by="search_jira")
+
+
+def test_assignment_is_validated_not_just_construction(draft: IssueDraft) -> None:
+    """A draft is mutated across turns; unvalidated assignment defeats the §2 cap.
+
+    Without this the writer succeeds silently and the *next* container to read
+    the draft back takes the ValidationError (§8.3).
+    """
+    with pytest.raises(ValidationError):
+        draft.round = -1
+    with pytest.raises(ValidationError):
+        draft.status = "done"  # type: ignore[assignment]
+    with pytest.raises(ValidationError):
+        draft.category = "epic"  # type: ignore[assignment]
+
+    assert draft.may_ask_again
+    assert draft.rounds_remaining <= MAX_CLARIFICATION_ROUNDS

@@ -7,6 +7,7 @@ Bring the stack up with ./scripts/dev-up.sh and point the env at it with
 from __future__ import annotations
 
 import os
+import pathlib
 from collections.abc import AsyncIterator
 
 import pytest
@@ -14,7 +15,20 @@ import pytest
 from firsthand.config import get_settings
 from firsthand.storage import PostgresVectorStore, RedisStateStore
 
-pytestmark = pytest.mark.integration
+INTEGRATION_DIR = pathlib.Path(__file__).parent
+
+
+def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
+    """Mark everything under this directory.
+
+    `pytestmark` in a conftest does nothing — pytest only honours it in test
+    modules — so without this hook a new file here that forgot its own marker
+    is collected by `pytest -m "not integration"`, i.e. by CI's container-less
+    unit job, where it fails against a database that isn't there.
+    """
+    for item in items:
+        if INTEGRATION_DIR in pathlib.Path(str(item.path)).parents:
+            item.add_marker(pytest.mark.integration)
 
 
 def _unreachable(what: str, exc: Exception) -> None:

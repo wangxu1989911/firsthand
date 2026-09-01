@@ -37,9 +37,11 @@ class FakePool:
         self.opened = False
         self.closed = False
         self.fail_on_connect = fail_on_connect
+        self.connection_timeouts: list[float | None] = []
 
     @asynccontextmanager
-    async def connection(self) -> AsyncIterator[FakeConnection]:
+    async def connection(self, timeout: float | None = None) -> AsyncIterator[FakeConnection]:
+        self.connection_timeouts.append(timeout)
         if self.fail_on_connect:
             raise RuntimeError("connection refused")
         yield self.conn

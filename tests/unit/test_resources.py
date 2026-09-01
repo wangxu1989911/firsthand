@@ -8,7 +8,7 @@ from typing import Any, cast
 from tests.fakes import FakePool, FakeRedis
 
 from firsthand.config import Settings
-from firsthand.resources import AppResources
+from firsthand.resources import READINESS_TIMEOUT_SECONDS, AppResources
 from firsthand.storage import PostgresVectorStore, RedisStateStore
 
 
@@ -89,3 +89,10 @@ def test_the_redis_client_is_built_with_timeouts() -> None:
     assert kwargs["socket_timeout"] == 2.5
     assert kwargs["socket_connect_timeout"] == 2.5
     assert kwargs["health_check_interval"] == 30
+
+
+async def test_readiness_does_not_queue_behind_live_traffic() -> None:
+    """The pool's 30s default would report a busy-but-healthy database as down."""
+    pool = FakePool()
+    await _resources(pool, FakeRedis()).check()
+    assert pool.connection_timeouts == [READINESS_TIMEOUT_SECONDS]
