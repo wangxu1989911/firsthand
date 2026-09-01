@@ -1,6 +1,6 @@
 # One image, deployed unchanged to Cloud Run or Fargate/App Runner (design doc §8.3).
 # Nothing cloud-specific is baked in: all configuration arrives via environment.
-FROM python:3.13-slim AS base
+FROM python:3.14-slim AS base
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
