@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "An open-source, self-hosted agent that catches duplicate and related feature requests before they're filed twice."
 readme = "README.md"
 license = { file = "LICENSE" }
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.32",
@@ -62,13 +62,13 @@ exclude_lines = [
 [tool.ruff]
 line-length = 100
 src = ["src", "tests"]
-target-version = "py311"
+target-version = "py313"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "N", "RUF"]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.13"
 packages = ["firsthand"]
 mypy_path = "src"
 strict = true

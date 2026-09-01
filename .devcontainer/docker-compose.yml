@@ -1,10 +1,15 @@
 # Dev-container overlay: same stack as docker-compose.yml (§8.2), with the
 # worktree bind-mounted so edits are live and the app container kept idle so
 # VS Code — not the CMD — decides when the service runs.
+#
+# The mount source is "." and not "..": Compose resolves relative paths against
+# the *project* directory — the directory of the first -f file, i.e. the repo
+# root — not against the file they appear in. ".." mounted the repo's parent,
+# so /workspace had no pyproject.toml and postCreateCommand failed.
 services:
   app:
     volumes:
-      - ..:/workspace:cached
+      - .:/workspace:cached
     working_dir: /workspace
     command: ["sleep", "infinity"]
     environment:

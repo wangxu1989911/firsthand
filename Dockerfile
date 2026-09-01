@@ -1,12 +1,17 @@
 # One image, deployed unchanged to Cloud Run or Fargate/App Runner (design doc §8.3).
 # Nothing cloud-specific is baked in: all configuration arrives via environment.
-FROM python:3.11-slim AS base
+FROM python:3.13-slim AS base
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
 WORKDIR /app
+
+# The base image's pip lags its own releases; upgrading once here keeps resolver
+# behaviour current and keeps the "new release of pip" notice out of every log.
+RUN pip install --no-cache-dir --upgrade pip
 
 # One install step, so a source edit does re-resolve dependencies. Splitting it
 # would need a lockfile the project does not have yet; the honest comment beats
