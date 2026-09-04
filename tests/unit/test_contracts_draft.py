@@ -20,6 +20,7 @@ from firsthand.contracts import (
 def test_defaults_start_in_gathering_info(draft: IssueDraft) -> None:
     assert draft.status == "gathering_info"
     assert draft.round == 0
+    assert draft.summary == ""
     assert draft.duplicate_of is None
     assert draft.score is None
     assert draft.routing is None
@@ -62,6 +63,7 @@ def test_cite_filters_evidence_by_source(draft: IssueDraft) -> None:
 
 
 def test_a_fully_populated_draft_round_trips_through_json(draft: IssueDraft) -> None:
+    draft.summary = "checkout returns a 500 on submit"
     draft.duplicate_of = DuplicateOf(ticket_id="PAY-412", similarity=0.94)
     draft.score = Score(impact=7, effort=3, urgency="med", confidence=0.82)
     draft.routing = Routing(decision="auto_file", reason="backlog-shaped, confident")
