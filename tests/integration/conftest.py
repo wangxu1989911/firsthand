@@ -9,6 +9,7 @@ from __future__ import annotations
 import os
 import pathlib
 from collections.abc import AsyncIterator
+from typing import NoReturn
 
 import pytest
 
@@ -31,7 +32,7 @@ def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
             item.add_marker(pytest.mark.integration)
 
 
-def _unreachable(what: str, exc: Exception) -> None:
+def _unreachable(what: str, exc: Exception) -> NoReturn:
     """Skip locally, but fail where the databases are supposed to be there.
 
     A skipped test still exits 0, so without this CI's integration job goes
