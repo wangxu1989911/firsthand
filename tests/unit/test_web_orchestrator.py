@@ -126,17 +126,26 @@ def test_resolve_jira_falls_back_when_the_stored_config_is_unusable() -> None:
 # --- _build_orchestrator + startup wiring -----------------------------------
 
 
+def _fake_app() -> Any:
+    resources = make_resources(FakeRedis())
+    return types.SimpleNamespace(state=types.SimpleNamespace(resources=resources))
+
+
+def _empty_connectors() -> ConnectorConfigStore:
+    return ConnectorConfigStore(cast(Any, FakeRedis()))
+
+
 async def test_build_orchestrator_uses_the_stub_without_an_llm_key() -> None:
-    app = types.SimpleNamespace(state=types.SimpleNamespace(resources=make_resources(FakeRedis())))
-    connectors = ConnectorConfigStore(cast(Any, FakeRedis()))
-    orch = await _build_orchestrator(cast(Any, app), make_settings(llm_api_key=""), connectors)
+    orch = await _build_orchestrator(
+        _fake_app(), make_settings(llm_api_key=""), _empty_connectors()
+    )
     assert isinstance(orch, StubOrchestrator)
 
 
 async def test_build_orchestrator_uses_the_real_loop_when_a_key_is_set() -> None:
-    app = types.SimpleNamespace(state=types.SimpleNamespace(resources=make_resources(FakeRedis())))
-    connectors = ConnectorConfigStore(cast(Any, FakeRedis()))
-    orch = await _build_orchestrator(cast(Any, app), make_settings(llm_api_key="sk-test"), connectors)
+    orch = await _build_orchestrator(
+        _fake_app(), make_settings(llm_api_key="sk-test"), _empty_connectors()
+    )
     assert isinstance(orch, LoopOrchestrator)
     await orch.aclose()  # release the real OpenAI client's connection pool
 
