@@ -9,6 +9,7 @@ import types
 import httpx
 import pytest
 
+import firsthand.connectors.docs.connector as conn_mod
 from firsthand.connectors.docs import DesignDocsConnector, DocPage, FixtureProvider
 from firsthand.connectors.docs.connector import _default_decryptor
 from firsthand.connectors.docs.providers import ConfluenceProvider
@@ -199,15 +200,30 @@ async def test_from_config_decrypts_the_credential_and_builds_a_working_connecto
     assert seen == ["cipher"]
 
 
-async def test_from_config_uses_the_default_decryptor_when_none_is_given() -> None:
+async def test_from_config_uses_the_default_decryptor_when_none_is_given(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seen: list[str] = []
+
+    def spy(ciphertext: str) -> str:
+        seen.append(ciphertext)
+        return ciphertext
+
+    monkeypatch.setattr(conn_mod, "_default_decryptor", spy)
     client = httpx.AsyncClient(base_url="https://acme.atlassian.net")
     connector = DesignDocsConnector.from_config(_docs_config(), client=client)
     assert isinstance(connector, DesignDocsConnector)
+    assert seen == ["cipher"]
     await connector.aclose()
 
 
-def test_default_decryptor_passes_through_when_the_secrets_module_is_absent() -> None:
-    sys.modules.pop("firsthand.secrets", None)
+def test_default_decryptor_passes_through_when_the_secrets_module_is_absent(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def missing(name: str) -> object:
+        raise ModuleNotFoundError(name)
+
+    monkeypatch.setattr(conn_mod.importlib, "import_module", missing)
     assert _default_decryptor("still-ciphertext") == "still-ciphertext"
 
 
