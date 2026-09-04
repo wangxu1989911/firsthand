@@ -19,6 +19,30 @@ def test_defaults_point_at_the_local_compose_stack() -> None:
     assert settings.port == 8080
 
 
+def test_llm_settings_default_to_openai_and_an_empty_key() -> None:
+    settings = Settings()
+    assert settings.llm_base_url == "https://api.openai.com/v1"
+    assert settings.llm_api_key == ""
+    assert settings.llm_embedding_model == "text-embedding-3-small"
+    assert settings.llm_max_retries == 2
+
+
+def test_llm_settings_are_env_overridable(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("FIRSTHAND_LLM_API_KEY", "sk-live")
+    monkeypatch.setenv("FIRSTHAND_LLM_CHAT_MODEL", "gpt-4o")
+    monkeypatch.setenv("FIRSTHAND_LLM_TIMEOUT_SECONDS", "12.5")
+    settings = get_settings()
+    assert settings.llm_api_key == "sk-live"
+    assert settings.llm_chat_model == "gpt-4o"
+    assert settings.llm_timeout_seconds == 12.5
+
+
+def test_a_nonpositive_llm_timeout_fails_at_startup(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("FIRSTHAND_LLM_TIMEOUT_SECONDS", "0")
+    with pytest.raises(ValidationError):
+        get_settings()
+
+
 def test_every_setting_is_overridable_by_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("FIRSTHAND_DATABASE_URL", "postgresql://u:p@db:5432/x")
     monkeypatch.setenv("FIRSTHAND_REDIS_URL", "redis://cache:6379/2")
