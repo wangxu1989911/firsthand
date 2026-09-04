@@ -1,0 +1,10 @@
+{
+  "sha": "ccc333ccc333ccc333ccc333ccc333ccc333ccc3",
+  "stats": { "total": 220, "additions": 180, "deletions": 40 },
+  "files": [
+    { "filename": "src/checkout/total.py", "additions": 60, "deletions": 10 },
+    { "filename": "src/checkout/coupon.py", "additions": 40, "deletions": 10 },
+    { "filename": "src/checkout/tax.py", "additions": 50, "deletions": 10 },
+    { "filename": "tests/test_checkout.py", "additions": 30, "deletions": 10 }
+  ]
+}

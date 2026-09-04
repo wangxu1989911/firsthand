@@ -1,0 +1,13 @@
+{
+  "total_count": 1,
+  "incomplete_results": false,
+  "items": [
+    {
+      "number": 214,
+      "title": "Rework checkout coupon handling",
+      "body": "Coupons are applied client-side and re-validated on submit. This PR moves validation server-side so the displayed total always matches.",
+      "html_url": "https://github.com/acme/store/pull/214",
+      "pull_request": { "url": "https://api.github.com/repos/acme/store/pulls/214" }
+    }
+  ]
+}

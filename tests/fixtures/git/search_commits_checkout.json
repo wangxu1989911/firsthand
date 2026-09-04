@@ -1,0 +1,24 @@
+{
+  "total_count": 2,
+  "incomplete_results": false,
+  "items": [
+    {
+      "sha": "aaa111aaa111aaa111aaa111aaa111aaa111aaa1",
+      "html_url": "https://github.com/acme/store/commit/aaa111aaa111aaa111aaa111aaa111aaa111aaa1",
+      "commit": {
+        "message": "Fix checkout total when a coupon is removed\n\nThe subtotal was cached and never recomputed.",
+        "author": { "name": "Dana Lee", "date": "2026-08-20T12:00:00Z" }
+      },
+      "repository": { "full_name": "acme/store" }
+    },
+    {
+      "sha": "bbb222bbb222bbb222bbb222bbb222bbb222bbb2",
+      "html_url": "https://github.com/acme/store/commit/bbb222bbb222bbb222bbb222bbb222bbb222bbb2",
+      "commit": {
+        "message": "   ",
+        "author": { "name": "Dana Lee", "date": "2026-08-19T09:30:00Z" }
+      },
+      "repository": { "full_name": "acme/store" }
+    }
+  ]
+}
