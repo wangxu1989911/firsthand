@@ -1,8 +1,8 @@
-"""Evidence connectors: thin adapters from a :class:`~firsthand.contracts.ToolCall`
-to a list of retrieved :class:`~firsthand.contracts.Evidence` passages.
+"""Connectors: each one retrieves evidence for the orchestrator, never a verdict.
 
-A connector never decides what evidence means — that is the orchestrator's job
-(CLAUDE.md §2). Each connector answers the ``ToolCall`` / ``ToolResult`` contract
-in ``firsthand.contracts.tools`` directly against the §3 shapes; a later pass can
-factor out whatever the Jira, Git, and Docs adapters end up sharing.
+Every connector answers the §3 ``ToolCall`` / ``ToolResult`` contract in
+``firsthand.contracts.tools`` and returns ``Evidence`` passages directly — there
+is deliberately no shared base class coupling Jira, Git, and Docs together. A
+connector never decides what its evidence means; that is the orchestrator's job
+(CLAUDE.md §2).
 """
