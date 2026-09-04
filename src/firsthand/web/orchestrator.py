@@ -1,14 +1,19 @@
-"""A deterministic stand-in for the real orchestrator (Phase 1 / §5).
+"""Implementations of the :class:`~firsthand.web.intake.Orchestrator` seam.
 
-It runs a real clarification loop against the §3 contracts — classify, gather the
-required fields one question at a time, respect the round cap, then either
-"file" or escalate — with fixed rules instead of an LLM. Phase 5 swaps in the
-real :class:`~firsthand.web.intake.Orchestrator`; this class then only backs
-tests.
+:class:`LoopOrchestrator` is the real one — a thin adapter over Phase 1's
+``firsthand.orchestrator`` loop (classify → clarify → investigate → score →
+route), chosen at startup whenever an LLM key is configured.
+
+:class:`StubOrchestrator` is the deterministic fallback: the same shape of
+clarification loop with fixed rules instead of an LLM. It backs the tests and
+also keeps the public chat working on a stack that has no LLM key yet.
 """
 
 from __future__ import annotations
 
+from typing import Any
+
+from firsthand.connectors.jira import JiraConnector, JiraTransportError
 from firsthand.contracts import (
     Category,
     Conversation,
@@ -17,8 +22,68 @@ from firsthand.contracts import (
     Score,
     Urgency,
 )
+from firsthand.orchestrator import Orchestrator as _Loop
+from firsthand.orchestrator import OrchestratorDeps
 from firsthand.web.intake import OrchestratorTurn
 from firsthand.web.redaction import redact
+
+
+class _UnconfiguredJiraTransport:
+    """A :class:`~firsthand.connectors.jira.JiraTransport` for when no Jira
+    connector has been set up in the admin area yet.
+
+    Every call fails cleanly rather than reaching the network: the loop logs the
+    failed ``search_jira`` and steps past it, and a failed ``create_ticket``
+    routes the draft to a human. Configuring Jira swaps in the real transport at
+    the next restart.
+    """
+
+    _MESSAGE = "no Jira connector is configured (Admin → Configuration)"
+
+    async def get(self, path: str, params: dict[str, Any]) -> dict[str, Any]:
+        raise JiraTransportError(self._MESSAGE)
+
+    async def post(self, path: str, payload: dict[str, Any]) -> dict[str, Any]:
+        raise JiraTransportError(self._MESSAGE)
+
+
+def unconfigured_jira() -> JiraConnector:
+    """A :class:`JiraConnector` that fails every call until Jira is configured."""
+    return JiraConnector(_UnconfiguredJiraTransport(), browse_base_url="")
+
+
+class LoopOrchestrator:
+    """Phase 1's real orchestrator behind the web intake seam.
+
+    The loop loads and saves the draft itself through the shared
+    :class:`~firsthand.storage.StateStore`, so this adapter only translates the
+    call shape and the reply type. ``draft`` is accepted for protocol
+    conformance but the loop re-reads it from the store.
+    """
+
+    def __init__(self, deps: OrchestratorDeps) -> None:
+        self._deps = deps
+
+    async def advance(
+        self,
+        *,
+        message: str,
+        draft: IssueDraft | None,
+        conversation: Conversation,
+    ) -> OrchestratorTurn:
+        reply = await _Loop(self._deps).handle(
+            surface=conversation.surface,
+            session_id=conversation.session_id,
+            text=message,
+        )
+        return OrchestratorTurn(draft=reply.draft, reply=reply.message, done=reply.done)
+
+    async def aclose(self) -> None:
+        """Release the LLM client's HTTP connection pool at shutdown."""
+        closer = getattr(self._deps.llm, "aclose", None)
+        if closer is not None:
+            await closer()
+
 
 _REQUIRED_FIELDS: dict[Category, tuple[str, ...]] = {
     "bug": ("steps_to_reproduce", "affected_version"),

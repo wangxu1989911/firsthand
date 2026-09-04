@@ -19,6 +19,10 @@ def test_defaults_point_at_the_local_compose_stack() -> None:
     assert settings.port == 8080
 
 
+def test_jira_project_key_defaults_to_fh() -> None:
+    assert Settings().jira_project_key == "FH"
+
+
 def test_llm_settings_default_to_openai_and_an_empty_key() -> None:
     settings = Settings()
     assert settings.llm_base_url == "https://api.openai.com/v1"

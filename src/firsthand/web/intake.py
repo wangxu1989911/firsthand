@@ -5,9 +5,11 @@ The clarification loop knows nothing about HTTP or Slack. A transport implements
 identically — and drives the shared loop through the :class:`Orchestrator`
 protocol below.
 
-**Phase 5 integration point.** Phase 1 builds the real orchestrator against the
-same §3 contracts. When it lands, drop it in wherever a :class:`StubOrchestrator`
-is constructed; nothing else in this package needs to change.
+Phase 1's real orchestrator is adapted to this protocol by
+:class:`~firsthand.web.orchestrator.LoopOrchestrator`;
+:func:`~firsthand.web.wiring.attach_phase2` picks it whenever an LLM key is
+configured and falls back to :class:`~firsthand.web.orchestrator.StubOrchestrator`
+otherwise.
 """
 
 from __future__ import annotations

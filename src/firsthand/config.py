@@ -48,6 +48,11 @@ class Settings(BaseSettings):
     llm_timeout_seconds: float = Field(default=30.0, gt=0)
     llm_max_retries: int = Field(default=2, ge=0)
 
+    #: The tracker project new tickets are filed into (§5). The connector's base
+    #: URL and credential come from the admin Configuration page; only the
+    #: destination project is deployment-wide config.
+    jira_project_key: str = "FH"
+
     host: str = "0.0.0.0"
     port: int = Field(default=8080, gt=0, le=65_535)
 
