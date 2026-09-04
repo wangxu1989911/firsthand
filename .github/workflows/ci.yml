@@ -1,0 +1,116 @@
+# CI gates from design doc §8.4. Every stage below must pass on every push and
+# pull request; deploy (added when there is somewhere to deploy to) hangs off
+# merges to main only, after all of these are green.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A branch push with an open PR fires both events; without this every job ran
+# twice per push and superseded runs were never cancelled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.14"
+
+jobs:
+  lint:
+    name: Lint + typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - run: pip install -e '.[dev]'
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: mypy
+
+  test:
+    name: Unit tests + 100% coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - run: pip install -e '.[dev]'
+      # The gate is 100% on the deterministic code; it does not stand in for the
+      # eval suite that judges LLM-facing behaviour (§8.4).
+      - run: pytest -m "not integration" --cov --cov-report=term-missing
+
+  integration:
+    name: Integration tests (real Postgres + Redis)
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: firsthand
+          POSTGRES_PASSWORD: firsthand
+          POSTGRES_DB: firsthand
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -h 127.0.0.1 -U firsthand -d firsthand"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    env:
+      FIRSTHAND_DATABASE_URL: postgresql://firsthand:firsthand@localhost:5432/firsthand
+      FIRSTHAND_REDIS_URL: redis://localhost:6379/0
+      # Without this the fixtures skip on an unreachable database and pytest
+      # still exits 0 — the one job that exercises real storage would go green
+      # having exercised none of it.
+      FIRSTHAND_REQUIRE_INTEGRATION: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - run: pip install -e '.[dev]'
+      # Everything external stays mocked; only the two databases are real (§8.6).
+      - run: pytest -m integration --no-cov
+
+  docker:
+    name: Docker build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      # Catches Dockerfile rot before it ships (§8.4).
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: firsthand:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Smoke-test the image
+        run: docker run --rm --entrypoint python firsthand:ci -c "import firsthand; print(firsthand.__version__)"
+      # The dev stage is not on the deploy path, so nothing else would notice it
+      # rotting until someone opened the dev container and found it broken.
+      - name: Build the dev-container stage too
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: dev
+          push: false
+          load: true
+          tags: firsthand:ci-dev
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Verify the dev image has the tools it exists to provide
+        run: docker run --rm --entrypoint sh firsthand:ci-dev -c "git --version && ruff --version && pytest --version"

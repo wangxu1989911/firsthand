@@ -1,0 +1,53 @@
+# Isolated per worktree (design doc §8.2): every stack is namespaced by
+# COMPOSE_PROJECT_NAME and no host port is ever fixed, so two worktrees can run
+# and test at the same time without colliding on names, networks, or ports.
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: firsthand
+      POSTGRES_PASSWORD: firsthand
+      POSTGRES_DB: firsthand
+    ports:
+      - "5432" # ephemeral host port — discover it with `docker compose port db 5432`
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      # -h 127.0.0.1 on purpose: the entrypoint runs initdb against a
+      # socket-only server, so a socket probe reports ready during a window
+      # when the real TCP listener is not up yet.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U firsthand -d firsthand"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "6379" # ephemeral host port
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  app:
+    build: .
+    environment:
+      FIRSTHAND_DATABASE_URL: postgresql://firsthand:firsthand@db:5432/firsthand
+      FIRSTHAND_REDIS_URL: redis://redis:6379/0
+      FIRSTHAND_EMBEDDING_DIMENSIONS: "${FIRSTHAND_EMBEDDING_DIMENSIONS:-1536}"
+      FIRSTHAND_STATE_TTL_SECONDS: "${FIRSTHAND_STATE_TTL_SECONDS:-86400}"
+      FIRSTHAND_LOG_LEVEL: "${FIRSTHAND_LOG_LEVEL:-INFO}"
+    ports:
+      - "8080" # ephemeral host port — `docker compose port app 8080`
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  db-data:
