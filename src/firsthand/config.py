@@ -38,6 +38,16 @@ class Settings(BaseSettings):
     #: hangs the readiness probe forever instead of failing it.
     redis_timeout_seconds: float = Field(default=5.0, gt=0)
 
+    # The one call that leaves the box (§8.6). Tests never read these — every
+    # unit and integration test injects a recorded-fixture client instead — so
+    # an empty api_key is a valid state right up until the real client is built.
+    llm_base_url: str = "https://api.openai.com/v1"
+    llm_api_key: str = ""
+    llm_chat_model: str = "gpt-4o-mini"
+    llm_embedding_model: str = "text-embedding-3-small"
+    llm_timeout_seconds: float = Field(default=30.0, gt=0)
+    llm_max_retries: int = Field(default=2, ge=0)
+
     host: str = "0.0.0.0"
     port: int = Field(default=8080, gt=0, le=65_535)
     # A bare `str` here means an ordinary misspelling (WARN for WARNING) passes

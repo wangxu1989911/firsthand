@@ -1,0 +1,146 @@
+[
+  {
+    "id": "A1",
+    "title": "Add a dark mode theme to the web app",
+    "body": "Please add a dark mode theme option in settings so the interface is easier on the eyes at night. A toggle between light and dark would be ideal.",
+    "duplicate_of": null
+  },
+  {
+    "id": "A2",
+    "title": "Dark mode theme option for the interface",
+    "body": "The web app needs a dark mode theme. Add a light and dark toggle in settings so the interface is easier on the eyes at night.",
+    "duplicate_of": "A1"
+  },
+  {
+    "id": "B1",
+    "title": "Export report data to CSV",
+    "body": "I want to export the report table to a CSV file so I can open the data in a spreadsheet and share it with my team.",
+    "duplicate_of": null
+  },
+  {
+    "id": "B2",
+    "title": "CSV export for report tables",
+    "body": "Add a button to export report data as a CSV file. Opening the exported data in a spreadsheet to share with the team is the main use case.",
+    "duplicate_of": "B1"
+  },
+  {
+    "id": "C1",
+    "title": "Login fails when using SAML SSO",
+    "body": "Signing in through SAML single sign-on fails with an error after the identity provider redirect. Password login still works.",
+    "duplicate_of": null
+  },
+  {
+    "id": "C2",
+    "title": "SAML single sign-on login broken",
+    "body": "SSO login through SAML fails with an error right after the identity provider redirect. Regular password login is unaffected.",
+    "duplicate_of": "C1"
+  },
+  {
+    "id": "C3",
+    "title": "Cannot sign in with SSO identity provider",
+    "body": "Login through the SAML SSO identity provider fails after redirect with an error. Password sign in works fine.",
+    "duplicate_of": "C1"
+  },
+  {
+    "id": "D1",
+    "title": "App crashes on startup after the latest update",
+    "body": "Since updating to the latest version the desktop app crashes immediately on startup before the main window appears.",
+    "duplicate_of": null
+  },
+  {
+    "id": "D2",
+    "title": "Desktop app crashes immediately on launch after update",
+    "body": "After the latest update the app crashes on startup. It closes before the main window appears every time I launch it.",
+    "duplicate_of": "D1"
+  },
+  {
+    "id": "E1",
+    "title": "Dashboard takes very long to load",
+    "body": "The main dashboard page takes more than ten seconds to load when an account has many projects. It used to be fast.",
+    "duplicate_of": null
+  },
+  {
+    "id": "E2",
+    "title": "Slow dashboard load for large accounts",
+    "body": "Dashboard load is very slow, over ten seconds, for accounts with many projects. The page used to load fast.",
+    "duplicate_of": "E1"
+  },
+  {
+    "id": "F1",
+    "title": "Return rate limit headers on API responses",
+    "body": "The REST API should return rate limit headers so clients can see their remaining quota and back off before hitting a limit.",
+    "duplicate_of": null
+  },
+  {
+    "id": "F2",
+    "title": "Expose remaining quota via API rate limit headers",
+    "body": "Add rate limit headers to REST API responses so clients know their remaining quota and can back off before they hit the limit.",
+    "duplicate_of": "F1"
+  },
+  {
+    "id": "G1",
+    "title": "Search returns nothing when filtering by tag",
+    "body": "Using the tag filter in search always returns an empty result set even when items with that tag clearly exist.",
+    "duplicate_of": null
+  },
+  {
+    "id": "H1",
+    "title": "Notification emails have broken HTML formatting",
+    "body": "The notification emails arrive with raw HTML tags visible in the body instead of rendered formatting.",
+    "duplicate_of": null
+  },
+  {
+    "id": "I1",
+    "title": "Support two-factor authentication with an authenticator app",
+    "body": "Add TOTP two-factor authentication so users can secure their account with an authenticator app instead of only SMS.",
+    "duplicate_of": null
+  },
+  {
+    "id": "J1",
+    "title": "Bulk delete for archived projects",
+    "body": "Allow selecting multiple archived projects and deleting them in one action instead of one at a time.",
+    "duplicate_of": null
+  },
+  {
+    "id": "K1",
+    "title": "Webhook deliveries are not retried on failure",
+    "body": "When a webhook endpoint returns a 500 the delivery is dropped and never retried, so events are silently lost.",
+    "duplicate_of": null
+  },
+  {
+    "id": "L1",
+    "title": "Report timestamps show the wrong timezone",
+    "body": "Timestamps in generated reports are rendered in UTC rather than the account timezone configured in settings.",
+    "duplicate_of": null
+  },
+  {
+    "id": "M1",
+    "title": "Keyboard shortcuts for navigating between views",
+    "body": "Add keyboard shortcuts to jump between the main views so power users can navigate without the mouse.",
+    "duplicate_of": null
+  },
+  {
+    "id": "N1",
+    "title": "PDF export is missing page numbers",
+    "body": "Documents exported to PDF do not include page numbers in the footer, which makes long exports hard to reference.",
+    "duplicate_of": null
+  },
+  {
+    "id": "O1",
+    "title": "Avatar upload rejects images over 1 MB without a message",
+    "body": "Uploading a profile avatar larger than 1 MB silently fails with no error shown to the user.",
+    "duplicate_of": null
+  },
+  {
+    "id": "P1",
+    "title": "Allow inviting users by email in bulk",
+    "body": "Add a way to paste a list of email addresses and send workspace invitations to all of them at once.",
+    "duplicate_of": null
+  },
+  {
+    "id": "Q1",
+    "title": "Audit log for administrative actions",
+    "body": "Provide an audit log that records administrative actions like role changes and connector edits with a timestamp and actor.",
+    "duplicate_of": null
+  }
+]
