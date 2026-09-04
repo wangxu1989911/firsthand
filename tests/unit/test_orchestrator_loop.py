@@ -123,6 +123,7 @@ async def test_complete_report_with_no_neighbours_is_auto_filed() -> None:
 
     assert reply.done is True
     assert reply.draft.status == "filed"
+    assert reply.draft.summary == "Checkout submit returns a 500"  # moved onto its own field
     assert reply.draft.routing is not None and reply.draft.routing.decision == "auto_file"
     assert reply.draft.ticket is not None
     assert reply.draft.ticket.id == "FH-1"
@@ -131,6 +132,47 @@ async def test_complete_report_with_no_neighbours_is_auto_filed() -> None:
     # the new request was indexed for future dedup
     assert store.rows["s2"][1]["ticket_id"] == "FH-1"
     assert deps.tools.calls_made == 2  # one search, one create
+
+
+async def test_a_complete_report_without_a_classifier_summary_still_files() -> None:
+    """No summary this turn: the dedup query and ticket title fall back to the text."""
+    store = InMemoryVectorStore()
+    text = (
+        "orders stay in pending forever\n"
+        "steps: place an order\n"
+        "expected: it moves to paid\n"
+        "actual: it never leaves pending"
+    )
+    transport = _jira(
+        **{
+            "GET /rest/api/3/search": [{"issues": []}],
+            "POST /rest/api/3/issue": [{"key": "FH-9"}],
+        }
+    )
+    llm = recorded_llm(
+        completions={
+            **classification_entry(
+                text,
+                {
+                    "category": "bug",
+                    "extracted_fields": {
+                        "steps_to_reproduce": "place an order",
+                        "expected_behavior": "it moves to paid",
+                        "actual_behavior": "it never leaves pending",
+                    },
+                    "summary": "",
+                },
+            ),
+            **_score(text, [], None),
+        },
+        embeddings=embedding_entry(text, VEC),
+    )
+    deps = _deps(llm, transport, store)
+    reply = await Orchestrator(deps).handle(surface="web", session_id="s9", text=text)
+
+    assert reply.draft.status == "filed"
+    assert reply.draft.summary == ""
+    assert reply.draft.ticket is not None and reply.draft.ticket.id == "FH-9"
 
 
 async def test_a_close_neighbour_is_filed_and_linked_as_a_duplicate() -> None:

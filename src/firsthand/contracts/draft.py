@@ -102,6 +102,11 @@ class IssueDraft(Contract):
     conversation: Conversation
     raw_text: str
     redacted_text: str = ""
+    #: A short, neutral one-line restatement of the request, produced at
+    #: classification (§5). Used as the dedup/search query and as the filed
+    #: ticket's title; carries no names or specifics, so it is safe to embed
+    #: and to show a reviewer. Empty until the draft has been classified.
+    summary: str = ""
     category: Category | None = None
     round: int = Field(default=0, ge=0)
     required_fields: list[str] = Field(default_factory=list)

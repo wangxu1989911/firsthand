@@ -95,9 +95,9 @@ class Orchestrator:
             draft.required_fields = required_fields_for(classification.category)
         merged = dict(draft.extracted_fields)
         merged.update(classification.clean_fields())
-        if classification.summary.strip():
-            merged["summary"] = classification.summary.strip()
         draft.extracted_fields = merged
+        if classification.summary.strip():
+            draft.summary = classification.summary.strip()
         draft.recompute_missing_fields()
 
         # --- clarify (capped) -------------------------------------------------
@@ -111,7 +111,7 @@ class Orchestrator:
         # --- investigate (capped) ------------------------------------------------
         draft.status = "investigating"
         self._d.tools.reset()
-        query = (draft.extracted_fields.get("summary") or draft.redacted_text)[:_MAX_QUERY_CHARS]
+        query = (draft.summary or draft.redacted_text)[:_MAX_QUERY_CHARS]
         search = await self._d.tools.search_jira(query)
         if search.failed:
             logger.warning("search_jira failed for %s: %s", session_id, search.result)
@@ -148,7 +148,7 @@ class Orchestrator:
     async def _file(self, draft: IssueDraft) -> str:
         """Create the ticket, and link it to the canonical one if it is a duplicate."""
         first_line = next(iter(draft.redacted_text.splitlines()), "(no description)")
-        summary = draft.extracted_fields.get("summary") or first_line
+        summary = draft.summary or first_line
         created = await self._d.tools.create_ticket(
             project_key=self._d.project_key,
             summary=summary[:200],

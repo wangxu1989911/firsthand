@@ -6,6 +6,7 @@
 
 <dl>
   <dt>Status</dt><dd>{{ draft.status }}</dd>
+  <dt>Summary</dt><dd>{{ draft.summary or "—" }}</dd>
   <dt>Category</dt><dd>{{ draft.category or "—" }}</dd>
   <dt>Clarification round</dt><dd>{{ draft.round }} of {{ max_rounds }}</dd>
   <dt>Required fields</dt><dd>{{ draft.required_fields | join(", ") or "—" }}</dd>
