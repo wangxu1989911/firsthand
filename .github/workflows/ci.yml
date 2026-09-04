@@ -96,8 +96,11 @@ jobs:
           push: false
           load: true
           tags: firsthand:ci
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Distinct scopes: without them both exports below land in the same
+          # default gha scope and the dev build clobbers the runtime build's
+          # cache, so the runtime-only layers rebuild from scratch every run.
+          cache-from: type=gha,scope=runtime
+          cache-to: type=gha,mode=max,scope=runtime
       - name: Smoke-test the image
         run: docker run --rm --entrypoint python firsthand:ci -c "import firsthand; print(firsthand.__version__)"
       # The dev stage is not on the deploy path, so nothing else would notice it
@@ -110,7 +113,7 @@ jobs:
           push: false
           load: true
           tags: firsthand:ci-dev
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=dev
+          cache-to: type=gha,mode=max,scope=dev
       - name: Verify the dev image has the tools it exists to provide
         run: docker run --rm --entrypoint sh firsthand:ci-dev -c "git --version && ruff --version && pytest --version"

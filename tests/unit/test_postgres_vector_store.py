@@ -130,3 +130,12 @@ async def test_a_non_finite_embedding_never_reaches_the_index(bad: float) -> Non
         await store.upsert("PAY-1", [0.1, 0.2, bad], {})
     with pytest.raises(ValueError, match="non-finite"):
         await store.search([0.1, 0.2, bad], k=1)
+
+
+async def test_an_all_zero_embedding_never_reaches_the_index() -> None:
+    """Cosine distance is NaN for a zero vector; it must be refused, not stored/queried."""
+    store = _store(FakePool())
+    with pytest.raises(ValueError, match="all zeros"):
+        await store.upsert("PAY-1", [0.0, 0.0, 0.0], {})
+    with pytest.raises(ValueError, match="all zeros"):
+        await store.search([0.0, 0.0, 0.0], k=1)

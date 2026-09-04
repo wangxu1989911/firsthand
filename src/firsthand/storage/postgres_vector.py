@@ -141,6 +141,12 @@ class PostgresVectorStore:
         # in any detectable way.
         if not all(math.isfinite(value) for value in embedding):
             raise ValueError("embedding contains a non-finite value")
+        # Cosine distance is undefined for a zero vector: pgvector's <=> returns
+        # NaN, every resulting score is 1 - NaN, and Match's finite-score
+        # validator then raises out of search(). Reject it at the boundary
+        # instead, the same way a non-finite value is rejected above.
+        if not any(value != 0.0 for value in embedding):
+            raise ValueError("embedding is all zeros; cosine similarity is undefined")
         return to_vector_literal(embedding)
 
     async def upsert(
