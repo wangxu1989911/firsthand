@@ -57,4 +57,10 @@ def create_app(
             content={"status": "ready" if ready else "not_ready", "checks": checks},
         )
 
+    # Phase 2 — web chat + admin area. Wraps the lifespan above (keeping it
+    # intact) and adds its routers; see firsthand.web.wiring.
+    from firsthand.web.wiring import attach_phase2
+
+    attach_phase2(app, settings)
+
     return app

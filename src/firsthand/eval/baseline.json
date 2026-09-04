@@ -1,0 +1,8 @@
+{
+  "_comment": "Committed dedup baseline (design doc §8.4). `python -m firsthand.eval` fails if precision or recall drops more than `tolerance` below these. Regenerate with `python -m firsthand.eval --update-baseline` after a deliberate, reviewed change.",
+  "threshold": 0.5,
+  "precision": 0.875,
+  "recall": 1.0,
+  "f1": 0.9333,
+  "tolerance": 0.02
+}

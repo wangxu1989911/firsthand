@@ -37,6 +37,16 @@ class AppResources:
         self.vector_store = PostgresVectorStore(pool, dimensions=embedding_dimensions)
         self.state_store = RedisStateStore(redis, default_ttl_seconds=state_ttl_seconds)
 
+    @property
+    def redis(self) -> Redis:
+        """The raw Redis client.
+
+        Phase 2's admin sessions, admin users, and connector configs are all
+        Redis-backed stores layered beside the ``StateStore``; they share this
+        one connection rather than opening their own.
+        """
+        return self._redis
+
     @classmethod
     def from_settings(cls, settings: Settings) -> AppResources:
         """Build the real clients. Constructing them opens no connection yet."""

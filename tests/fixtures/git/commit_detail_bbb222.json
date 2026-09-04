@@ -1,0 +1,5 @@
+{
+  "sha": "bbb222bbb222bbb222bbb222bbb222bbb222bbb2",
+  "stats": { "total": 12, "additions": 8, "deletions": 4 },
+  "files": [{ "filename": "src/checkout/total.py", "additions": 8, "deletions": 4 }]
+}

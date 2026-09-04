@@ -1,0 +1,49 @@
+{% extends "_base.html" %}
+{% block title %}Request {{ session_id }} — Firsthand admin{% endblock %}
+{% block body %}
+<p><a href="/admin/dashboard">&larr; All requests</a></p>
+<h1>Request <code>{{ session_id }}</code></h1>
+
+<dl>
+  <dt>Status</dt><dd>{{ draft.status }}</dd>
+  <dt>Category</dt><dd>{{ draft.category or "—" }}</dd>
+  <dt>Clarification round</dt><dd>{{ draft.round }} of {{ max_rounds }}</dd>
+  <dt>Required fields</dt><dd>{{ draft.required_fields | join(", ") or "—" }}</dd>
+  <dt>Extracted fields</dt>
+  <dd>
+    {% if draft.extracted_fields %}
+    <ul>{% for k, v in draft.extracted_fields.items() %}<li><strong>{{ k }}:</strong> {{ v }}</li>{% endfor %}</ul>
+    {% else %}—{% endif %}
+  </dd>
+  <dt>Missing fields</dt><dd>{{ draft.missing_fields | join(", ") or "—" }}</dd>
+  <dt>Redacted text</dt><dd style="white-space: pre-wrap">{{ draft.redacted_text }}</dd>
+  <dt>Duplicate of</dt>
+  <dd>{% if draft.duplicate_of %}{{ draft.duplicate_of.ticket_id }} ({{ "%.2f" | format(draft.duplicate_of.similarity) }}){% else %}—{% endif %}</dd>
+  <dt>Score</dt>
+  <dd>{% if draft.score %}impact {{ draft.score.impact }}, effort {{ draft.score.effort }}, urgency {{ draft.score.urgency }}, confidence {{ draft.score.confidence }}{% else %}—{% endif %}</dd>
+  <dt>Routing</dt>
+  <dd>{% if draft.routing %}{{ draft.routing.decision }} — {{ draft.routing.reason }}{% else %}—{% endif %}</dd>
+</dl>
+
+<h2>Evidence ({{ draft.evidence | length }})</h2>
+{% if draft.evidence %}
+<table>
+  <thead><tr><th>Source</th><th>Ref</th><th>Snippet</th><th>Retrieved by</th></tr></thead>
+  <tbody>
+    {% for e in draft.evidence %}
+    <tr><td>{{ e.source }}</td><td>{{ e.ref }}</td><td>{{ e.snippet }}</td><td>{{ e.retrieved_by }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No evidence gathered.</p>
+{% endif %}
+
+{% if reviewable %}
+<h2>Review</h2>
+<form method="post" action="/admin/dashboard/drafts/{{ session_id }}/review">
+  <button name="decision" value="approve" type="submit">Approve &amp; file</button>
+  <button class="secondary" name="decision" value="reject" type="submit">Reject &amp; close</button>
+</form>
+{% endif %}
+{% endblock %}

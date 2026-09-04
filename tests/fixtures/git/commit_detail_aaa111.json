@@ -1,0 +1,8 @@
+{
+  "sha": "aaa111aaa111aaa111aaa111aaa111aaa111aaa1",
+  "stats": { "total": 60, "additions": 45, "deletions": 15 },
+  "files": [
+    { "filename": "src/checkout/total.py", "additions": 30, "deletions": 10 },
+    { "filename": "src/checkout/coupon.py", "additions": 15, "deletions": 5 }
+  ]
+}

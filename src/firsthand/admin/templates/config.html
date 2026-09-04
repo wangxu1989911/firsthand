@@ -1,0 +1,44 @@
+{% extends "_base.html" %}
+{% block title %}Connectors — Firsthand admin{% endblock %}
+{% block body %}
+<h1>Connector configuration</h1>
+<p>Credentials are encrypted before they are stored and never shown again. Leave
+the credential field blank to keep the current one.</p>
+
+<table>
+  <thead><tr><th>Type</th><th>Base URL</th><th>Credential</th><th>Enabled</th><th>Updated by</th></tr></thead>
+  <tbody>
+    {% for c in connectors %}
+    <tr>
+      <td>{{ c.type }}</td>
+      <td>{{ c.base_url }}</td>
+      <td>{% if c.credential %}<span class="pill">set</span>{% else %}<span class="pill">not set</span>{% endif %}</td>
+      <td>{{ "yes" if c.enabled else "no" }}</td>
+      <td>{{ c.updated_by }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5">No connectors configured yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h2>Add or update a connector</h2>
+<form method="post" action="/admin/config">
+  <label for="type">Type</label>
+  <select id="type" name="connector_type" required>
+    {% for t in connector_types %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+  </select>
+  <label for="base_url">Base URL</label>
+  <input id="base_url" name="base_url" type="url" required />
+  <label for="credential">Credential (leave blank to keep current)</label>
+  <input id="credential" name="credential" type="password" />
+  <label><input type="checkbox" name="enabled" value="true" checked /> Enabled</label>
+  <p><button type="submit">Save connector</button></p>
+</form>
+
+{% for c in connectors %}
+<form class="inline" method="post" action="/admin/config/{{ c.type }}/delete">
+  <button class="secondary" type="submit">Delete {{ c.type }}</button>
+</form>
+{% endfor %}
+{% endblock %}
