@@ -1,5 +1,8 @@
-"""Evidence connectors. Phase 1 ships Jira; Git and Docs land in later phases.
+"""Evidence connectors: thin adapters from a :class:`~firsthand.contracts.ToolCall`
+to a list of retrieved :class:`~firsthand.contracts.Evidence` passages.
 
-Every connector answers the ``ToolCall`` / ``ToolResult`` contract in
-``firsthand.contracts.tools`` and returns evidence, never a conclusion (§3).
+A connector never decides what evidence means — that is the orchestrator's job
+(CLAUDE.md §2). Each connector answers the ``ToolCall`` / ``ToolResult`` contract
+in ``firsthand.contracts.tools`` directly against the §3 shapes; a later pass can
+factor out whatever the Jira, Git, and Docs adapters end up sharing.
 """
