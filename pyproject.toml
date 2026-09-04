@@ -12,6 +12,10 @@ dependencies = [
     "pydantic-settings>=2.6",
     "psycopg[binary,pool]>=3.2",
     "redis>=5.2",
+    "jinja2>=3.1",
+    "python-multipart>=0.0.9",
+    "argon2-cffi>=23.1",
+    "cryptography>=43.0",
 ]
 
 [project.optional-dependencies]
@@ -42,6 +46,7 @@ pythonpath = ["."]
 asyncio_mode = "auto"
 markers = [
     "integration: exercises the real Postgres/Redis containers; skipped when they are not reachable",
+    "e2e: drives the app through a real browser; skipped when Playwright/a browser is unavailable",
 ]
 addopts = "-q"
 
