@@ -58,23 +58,55 @@ class FakePool:
 
 
 class FakeRedis:
-    """Stands in for redis.asyncio.Redis."""
+    """Stands in for redis.asyncio.Redis.
+
+    Covers the string, set, and list operations Phase 2's Redis-backed stores
+    use. ``raw_as_bytes`` mirrors a client built without ``decode_responses``.
+    """
 
     def __init__(self, *, raw_as_bytes: bool = False, fail_ping: bool = False) -> None:
         self.store: dict[str, tuple[str, int | None]] = {}
+        self.sets: dict[str, set[str]] = {}
+        self.lists: dict[str, list[str]] = {}
+        self.expirations: dict[str, int] = {}
         self.raw_as_bytes = raw_as_bytes
         self.fail_ping = fail_ping
         self.closed = False
+
+    def _maybe_bytes(self, value: str) -> str | bytes:
+        return value.encode("utf-8") if self.raw_as_bytes else value
 
     async def get(self, key: str) -> str | bytes | None:
         entry = self.store.get(key)
         if entry is None:
             return None
-        value = entry[0]
-        return value.encode("utf-8") if self.raw_as_bytes else value
+        return self._maybe_bytes(entry[0])
 
     async def set(self, key: str, value: str, ex: int | None = None) -> None:
         self.store[key] = (value, ex)
+
+    async def delete(self, *keys: str) -> None:
+        for key in keys:
+            self.store.pop(key, None)
+            self.sets.pop(key, None)
+            self.lists.pop(key, None)
+
+    async def sadd(self, key: str, *members: str) -> None:
+        self.sets.setdefault(key, set()).update(members)
+
+    async def smembers(self, key: str) -> set[str | bytes]:
+        return {self._maybe_bytes(m) for m in self.sets.get(key, set())}
+
+    async def rpush(self, key: str, *values: str) -> None:
+        self.lists.setdefault(key, []).extend(values)
+
+    async def lrange(self, key: str, start: int, end: int) -> list[str | bytes]:
+        items = self.lists.get(key, [])
+        stop = None if end == -1 else end + 1
+        return [self._maybe_bytes(v) for v in items[start:stop]]
+
+    async def expire(self, key: str, ttl: int) -> None:
+        self.expirations[key] = ttl
 
     async def ping(self) -> bool:
         if self.fail_ping:

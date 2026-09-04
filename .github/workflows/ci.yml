@@ -83,6 +83,21 @@ jobs:
       # Everything external stays mocked; only the two databases are real (§8.6).
       - run: pytest -m integration --no-cov
 
+  eval:
+    name: Dedup eval vs baseline
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - run: pip install -e '.[dev]'
+      # Offline, deterministic: vendored dataset + lexical embedder, no network.
+      # Fails if dedup precision or recall regresses past the committed baseline
+      # (§8.4) — the gate the 100% coverage number does not provide.
+      - run: python -m firsthand.eval
+
   docker:
     name: Docker build
     runs-on: ubuntu-latest

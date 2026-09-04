@@ -38,8 +38,29 @@ class Settings(BaseSettings):
     #: hangs the readiness probe forever instead of failing it.
     redis_timeout_seconds: float = Field(default=5.0, gt=0)
 
+    # The one call that leaves the box (§8.6). Tests never read these — every
+    # unit and integration test injects a recorded-fixture client instead — so
+    # an empty api_key is a valid state right up until the real client is built.
+    llm_base_url: str = "https://api.openai.com/v1"
+    llm_api_key: str = ""
+    llm_chat_model: str = "gpt-4o-mini"
+    llm_embedding_model: str = "text-embedding-3-small"
+    llm_timeout_seconds: float = Field(default=30.0, gt=0)
+    llm_max_retries: int = Field(default=2, ge=0)
+
     host: str = "0.0.0.0"
     port: int = Field(default=8080, gt=0, le=65_535)
+
+    # Phase 2 — web chat + admin area.
+    #: Master key for authenticated encryption of connector credentials (§8.7)
+    #: and for signing admin session cookies. It lives only in the environment;
+    #: an empty value is allowed so the public chat can boot without it, but any
+    #: admin or connector-credential path raises until it is set.
+    secret_key: str = ""
+    #: How long an admin login session stays valid before re-authentication.
+    admin_session_ttl_seconds: int = Field(default=43_200, gt=0)
+    #: Optional path to a JSON eval report; the dashboard renders it when present.
+    eval_report_path: str = ""
     # A bare `str` here means an ordinary misspelling (WARN for WARNING) passes
     # validation and then dies inside uvicorn as a bare KeyError, in a container
     # with nothing to inspect. Fail at startup, naming the value.
