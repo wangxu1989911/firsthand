@@ -1,0 +1,46 @@
+{% extends "_base.html" %}
+{% block title %}Dashboard — Firsthand admin{% endblock %}
+{% block body %}
+<h1>Dashboard</h1>
+
+<h2>Eval report</h2>
+{% if eval_report %}
+<dl>
+  {% for key, value in eval_report.items() %}
+  <dt>{{ key }}</dt><dd>{{ value }}</dd>
+  {% endfor %}
+</dl>
+{% else %}
+<p>No eval report configured.</p>
+{% endif %}
+
+<h2>Requests ({{ summaries | length }})</h2>
+{% if summaries %}
+<table>
+  <thead>
+    <tr><th>Session</th><th>Status</th><th>Category</th><th>Round</th><th>Evidence</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for item in summaries %}
+    <tr>
+      <td><a href="/admin/dashboard/drafts/{{ item.session_id }}">{{ item.session_id }}</a></td>
+      <td>{{ item.draft.status }}</td>
+      <td>{{ item.draft.category or "—" }}</td>
+      <td>{{ item.draft.round }}</td>
+      <td>{{ item.draft.evidence | length }}</td>
+      <td>
+        {% if item.reviewable %}
+        <form class="inline" method="post" action="/admin/dashboard/drafts/{{ item.session_id }}/review">
+          <button name="decision" value="approve" type="submit">Approve</button>
+          <button class="secondary" name="decision" value="reject" type="submit">Reject</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No requests yet.</p>
+{% endif %}
+{% endblock %}
