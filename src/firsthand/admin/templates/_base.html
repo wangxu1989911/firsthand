@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}Firsthand admin{% endblock %}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           color: #1b1b1f; background: #fbfbfd; }
+    header { display: flex; justify-content: space-between; align-items: center;
+             padding: .9rem 1.5rem; border-bottom: 1px solid #d9d9e0; background: #fff; }
+    header a { color: #2f6f4f; text-decoration: none; margin-left: 1rem; }
+    main { max-width: 52rem; margin: 2rem auto; padding: 0 1.5rem; }
+    h1 { font-size: 1.4rem; }
+    table { border-collapse: collapse; width: 100%; background: #fff; }
+    th, td { text-align: left; padding: .55rem .7rem; border-bottom: 1px solid #e4e4ea; vertical-align: top; }
+    form.inline { display: inline; }
+    label { display: block; margin: .8rem 0 .2rem; font-weight: 600; }
+    input[type=text], input[type=password], input[type=url] {
+      width: 100%; padding: .5rem .6rem; border: 1px solid #d9d9e0; border-radius: .4rem; font: inherit; }
+    button { padding: .5rem .9rem; border: 0; border-radius: .4rem; background: #2f6f4f;
+             color: #fff; font: inherit; cursor: pointer; }
+    button.secondary { background: #6b6b76; }
+    .flash { padding: .6rem .8rem; border-radius: .4rem; background: #f2f7f4; border: 1px solid #cfe3d7; margin-bottom: 1rem; }
+    .error { background: #fbecec; border-color: #e6c5c5; }
+    .pill { display: inline-block; padding: .05rem .5rem; border-radius: 1rem; background: #eee; font-size: .8rem; }
+    dl { display: grid; grid-template-columns: 12rem 1fr; gap: .3rem .8rem; }
+    dt { color: #5b5b66; }
+    code { background: #f0f0f4; padding: .05rem .3rem; border-radius: .3rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>Firsthand admin</strong>
+    <nav>
+      {% if username %}
+      <span class="pill">{{ username }}</span>
+      <a href="/admin/dashboard">Dashboard</a>
+      <a href="/admin/config">Connectors</a>
+      <a href="/admin/password">Password</a>
+      <form class="inline" method="post" action="/admin/logout">
+        <button class="secondary" type="submit">Log out</button>
+      </form>
+      {% endif %}
+    </nav>
+  </header>
+  <main>
+    {% if flash %}<p class="flash">{{ flash }}</p>{% endif %}
+    {% if error %}<p class="flash error">{{ error }}</p>{% endif %}
+    {% block body %}{% endblock %}
+  </main>
+</body>
+</html>
