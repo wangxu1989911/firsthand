@@ -1,0 +1,6 @@
+{
+  "title": "Mobile offline mode",
+  "url": "https://docs.example.com/design/mobile-offline-mode",
+  "space": "Mobile",
+  "text": "Status: Exploring.\n\nThe mobile app should let a user read and triage issues with no connectivity, then sync changes when the device is back online. The hard part is conflict resolution when the same issue was edited on the server in the meantime.\n\nWe are leaning toward last-write-wins with a visible history entry, rather than a merge UI, for the first version."
+}

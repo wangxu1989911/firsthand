@@ -1,0 +1,6 @@
+{
+  "title": "SSO and SAML support",
+  "url": "https://docs.example.com/design/sso-saml-support",
+  "space": "Platform",
+  "text": "Status: In progress. Target: Q1.\n\nWe are adding SAML 2.0 single sign-on so enterprise customers can authenticate through Okta, Azure AD, and OneLogin. SCIM user provisioning is a follow-up, tracked separately.\n\nOpen questions: whether to support IdP-initiated login in the first release, and how to migrate existing password accounts onto a linked SSO identity without locking anyone out.\n\nThis supersedes the older \"custom OAuth per customer\" proposal, which did not scale past a handful of tenants."
+}

@@ -1,0 +1,6 @@
+{
+  "title": "Bulk CSV export of issues",
+  "url": "https://docs.example.com/design/csv-export",
+  "space": "Platform",
+  "text": "Status: Shipped in 3.4.\n\nUsers can export a filtered list of issues to CSV from the list view. The export runs asynchronously and emails a download link when the file is ready, because synchronous generation timed out on large projects. Columns follow the visible table columns plus the issue URL. There is a hard cap of fifty thousand rows per export; past that the request is rejected with a message pointing at the API. This paragraph is padded so that the retrieval chunker has at least one section longer than its default target length and has to fall back to splitting on sentence boundaries instead of paragraph boundaries, which is a path worth exercising with real fixture text rather than a synthetic string.\n\nNot in scope: XLSX output, scheduled recurring exports, and per-column formatting. Those were logged as separate requests and left unstarted."
+}

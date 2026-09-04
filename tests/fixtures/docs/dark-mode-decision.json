@@ -1,0 +1,6 @@
+{
+  "title": "Dark mode: decision record",
+  "url": "https://docs.example.com/design/dark-mode-decision",
+  "space": "Product Design",
+  "text": "\n\nStatus: Decided. Owner: Priya. Date: 2024-11-02.\n\nDecision: we will not build a dark mode theme for the web dashboard in this cycle. The request has come up several times and is explicitly ruled out for now. Revisit only after the design-system token refactor lands, because every color is currently hard-coded in component styles and a second theme would double the surface we hand-maintain.\n\nContext: three separate feature requests asked for a dark theme between June and October. Support volume does not justify the cost yet, and the accessibility contrast work that would have to ship alongside it is not scoped.\n\nAlternatives considered: a community-maintained user stylesheet was rejected because it breaks on every release; an OS-preference auto-switch was deferred to the same revisit."
+}
