@@ -135,6 +135,20 @@ jobs:
           cache-to: type=gha,mode=max,scope=runtime
       - name: Smoke-test the image
         run: docker run --rm --entrypoint python firsthand:ci -c "import firsthand; print(firsthand.__version__)"
+      # Runs against the loaded image directly rather than a second build.
+      # `:latest` for the scanner (not the app) is deliberate — a pinned Trivy
+      # would run against a stale vulnerability DB, defeating the point of
+      # scanning. .trivyignore documents the only two suppressed findings —
+      # pip's own vendored license-bundle copies, never imported at runtime —
+      # everything else here has to actually be fixed, not ignored.
+      - name: Scan the image for known vulnerabilities (Trivy)
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$PWD/.trivyignore:/.trivyignore:ro" \
+            aquasec/trivy:latest image \
+            --exit-code 1 --severity CRITICAL,HIGH --ignore-unfixed \
+            --ignorefile /.trivyignore \
+            firsthand:ci
       # The dev stage is not on the deploy path, so nothing else would notice it
       # rotting until someone opened the dev container and found it broken.
       - name: Build the dev-container stage too

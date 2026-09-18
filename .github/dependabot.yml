@@ -1,0 +1,27 @@
+# Design doc §6/§8.4: patches arrive by rebasing onto a newer pinned digest,
+# not by upgrading in place. This is the mechanism — Dependabot opens a PR
+# bumping the Dockerfile's FROM digest (and dependency floors, and Action
+# versions) on its own schedule; CI's Trivy scan and full suite still gate
+# every one of those PRs like any other change.
+version: 2
+updates:
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "docker"
+
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "deps"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "ci"
