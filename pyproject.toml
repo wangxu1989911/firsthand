@@ -29,6 +29,15 @@ dev = [
     "ruff>=0.8",
     "mypy>=1.13",
 ]
+# The NER layer of redaction.py (design doc §1, §8.1). Not in `dev`: it pulls
+# in spaCy and a language model, which the fast lint/unit jobs don't need —
+# redaction degrades to its pattern-only pass without this installed (§7).
+# The runtime image always installs it; see the Dockerfile.
+pii = [
+    "presidio-analyzer>=2.2",
+    "presidio-anonymizer>=2.2",
+    "spacy>=3.7",
+]
 
 [project.urls]
 Homepage = "https://github.com/wangxu1989911/firsthand"
@@ -48,6 +57,7 @@ asyncio_mode = "auto"
 markers = [
     "integration: exercises the real Postgres/Redis containers; skipped when they are not reachable",
     "e2e: drives the app through a real browser; skipped when Playwright/a browser is unavailable",
+    "presidio: exercises the real Presidio/spaCy NER model; skipped when the 'pii' extra isn't installed",
 ]
 addopts = "-q"
 
@@ -80,3 +90,10 @@ mypy_path = "src"
 strict = true
 warn_unused_ignores = true
 disallow_untyped_defs = true
+
+# The `pii` extra (presidio + spacy) is intentionally not a `dev` dependency
+# (see pyproject.toml's `pii` group and redaction.py) — mypy runs without it
+# installed, so it has no stubs to check these imports against.
+[[tool.mypy.overrides]]
+module = ["presidio_analyzer.*", "presidio_anonymizer.*"]
+ignore_missing_imports = true

@@ -22,10 +22,10 @@ from firsthand.llm.base import LLMClient
 from firsthand.orchestrator.classify import classify, next_question
 from firsthand.orchestrator.dedup import index_request, nearest, pick_duplicate
 from firsthand.orchestrator.fields import required_fields_for
-from firsthand.orchestrator.redaction import redact
 from firsthand.orchestrator.routing import decide_routing
 from firsthand.orchestrator.scoring import score_draft
 from firsthand.orchestrator.tools import ToolRegistry
+from firsthand.redaction import redact
 from firsthand.storage.base import StateStore, VectorStore
 
 logger = logging.getLogger(__name__)
@@ -87,7 +87,7 @@ class Orchestrator:
             )
 
         # raw_text is never sent anywhere; only this redacted copy is (§1, §5).
-        draft.redacted_text = redact(draft.raw_text)
+        draft.redacted_text = await redact(draft.raw_text)
 
         classification = await classify(self._d.llm, draft.redacted_text)
         if draft.category is None:

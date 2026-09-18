@@ -24,8 +24,8 @@ from firsthand.contracts import (
 )
 from firsthand.orchestrator import Orchestrator as _Loop
 from firsthand.orchestrator import OrchestratorDeps
+from firsthand.redaction import redact
 from firsthand.web.intake import OrchestratorTurn
-from firsthand.web.redaction import redact
 
 
 class _UnconfiguredJiraTransport:
@@ -133,9 +133,9 @@ class StubOrchestrator:
         conversation: Conversation,
     ) -> OrchestratorTurn:
         if draft is None:
-            draft = self._start(message, conversation)
+            draft = await self._start(message, conversation)
         else:
-            self._absorb_answer(draft, message)
+            await self._absorb_answer(draft, message)
 
         missing = draft.recompute_missing_fields()
         if not missing:
@@ -148,21 +148,21 @@ class StubOrchestrator:
         return OrchestratorTurn(draft=draft, reply=_QUESTION_FOR[missing[0]], done=False)
 
     @staticmethod
-    def _start(message: str, conversation: Conversation) -> IssueDraft:
+    async def _start(message: str, conversation: Conversation) -> IssueDraft:
         category = _classify(message)
         return IssueDraft(
             conversation=conversation,
             raw_text=message,
-            redacted_text=redact(message),
+            redacted_text=await redact(message),
             category=category,
             required_fields=list(_REQUIRED_FIELDS[category]),
             status="gathering_info",
         )
 
     @staticmethod
-    def _absorb_answer(draft: IssueDraft, message: str) -> None:
+    async def _absorb_answer(draft: IssueDraft, message: str) -> None:
         draft.raw_text = f"{draft.raw_text}\n{message}"
-        draft.redacted_text = redact(draft.raw_text)
+        draft.redacted_text = await redact(draft.raw_text)
         pending = draft.recompute_missing_fields()
         if pending:
             draft.extracted_fields = {**draft.extracted_fields, pending[0]: message}
