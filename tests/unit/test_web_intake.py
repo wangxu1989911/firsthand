@@ -1,4 +1,8 @@
-"""Redaction, the stub orchestrator, and the ChatService intake seam."""
+"""The stub orchestrator and the ChatService intake seam.
+
+Redaction itself is covered by ``tests/unit/test_redaction.py`` — the stub
+orchestrator just calls through to it, same as the real one.
+"""
 
 from __future__ import annotations
 
@@ -17,7 +21,6 @@ from firsthand.storage import RedisStateStore
 from firsthand.web.intake import IntakeTurn, Orchestrator, OrchestratorTurn
 from firsthand.web.log import ConversationLog, LogEntry
 from firsthand.web.orchestrator import StubOrchestrator
-from firsthand.web.redaction import redact
 from firsthand.web.service import ChatService
 
 WEB: Surface = "web"
@@ -25,18 +28,6 @@ WEB: Surface = "web"
 
 def _conversation(session_id: str = "s-1") -> Conversation:
     return Conversation(surface=WEB, session_id=session_id)
-
-
-# ----------------------------------------------------------------- redaction
-
-
-def test_redaction_masks_emails_and_phone_numbers() -> None:
-    assert redact("mail me at jane@example.com") == "mail me at <EMAIL>"
-    assert "<PHONE>" in redact("call +1 (415) 555-2671 today")
-
-
-def test_redaction_leaves_ordinary_text_untouched() -> None:
-    assert redact("the export button is missing") == "the export button is missing"
 
 
 # ------------------------------------------------------------ stub orchestrator

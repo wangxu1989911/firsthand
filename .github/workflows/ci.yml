@@ -43,8 +43,9 @@ jobs:
           cache: pip
       - run: pip install -e '.[dev]'
       # The gate is 100% on the deterministic code; it does not stand in for the
-      # eval suite that judges LLM-facing behaviour (§8.4).
-      - run: pytest -m "not integration" --cov --cov-report=term-missing
+      # eval suite that judges LLM-facing behaviour (§8.4). Presidio/spaCy are
+      # excluded here too — they're the pii job below, not this fast one.
+      - run: pytest -m "not integration and not presidio" --cov --cov-report=term-missing
 
   integration:
     name: Integration tests (real Postgres + Redis)
@@ -97,6 +98,22 @@ jobs:
       # Fails if dedup precision or recall regresses past the committed baseline
       # (§8.4) — the gate the 100% coverage number does not provide.
       - run: python -m firsthand.eval
+
+  pii:
+    name: PII redaction (Presidio)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - run: pip install -e '.[dev,pii]'
+      - run: python -m spacy download en_core_web_sm
+      # Without this a missing/broken model install skips these tests and
+      # pytest still exits 0 — this job exists to exercise the real NER pass,
+      # not to prove it's absent (same discipline as the integration job).
+      - run: FIRSTHAND_REQUIRE_PII_NER=1 pytest -m presidio --no-cov
 
   docker:
     name: Docker build

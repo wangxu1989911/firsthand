@@ -14,10 +14,10 @@ from firsthand.orchestrator.loop import (
     OrchestratorDeps,
     OrchestratorReply,
 )
-from firsthand.orchestrator.redaction import redact
 from firsthand.orchestrator.routing import CONFIDENCE_FLOOR, decide_routing
 from firsthand.orchestrator.scoring import ScoreJudgement, score_draft
 from firsthand.orchestrator.tools import ToolBudgetError, ToolRegistry
+from firsthand.redaction import redact
 
 __all__ = [
     "CONFIDENCE_FLOOR",

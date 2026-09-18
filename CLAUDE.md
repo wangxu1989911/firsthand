@@ -14,6 +14,7 @@ below (§3, §8.2, …) point into it.
 | Typecheck | `make typecheck` |
 | Unit tests + coverage gate | `make test` |
 | Integration tests (real DBs) | `make up && eval "$(./scripts/dev-env.sh)" && make test-integration` |
+| Real Presidio/spaCy NER redaction | `pip install -e '.[dev,pii]' && python -m spacy download en_core_web_sm && make test-presidio` |
 | Everything CI runs locally | `make check` |
 | Start / stop the local stack | `./scripts/dev-up.sh` / `./scripts/dev-down.sh` |
 

@@ -1,4 +1,4 @@
-.PHONY: install lint format typecheck test test-integration test-all up down env check
+.PHONY: install lint format typecheck test test-integration test-presidio test-all up down env check
 
 install:            ## Install the package and dev tooling into the active environment
 	pip install -e '.[dev]'
@@ -14,13 +14,16 @@ format:             ## Apply Ruff's formatting and safe fixes
 typecheck:          ## mypy, strict
 	mypy
 
-test:               ## Unit tests with the 100% coverage gate (no containers needed)
-	pytest -m "not integration" --cov --cov-report=term-missing
+test:               ## Unit tests with the 100% coverage gate (no containers, no NER model needed)
+	pytest -m "not integration and not presidio" --cov --cov-report=term-missing
 
 test-integration:   ## Real Postgres + Redis; run ./scripts/dev-up.sh first
 	pytest -m integration --no-cov
 
-test-all: test test-integration
+test-presidio:      ## Real Presidio/spaCy NER pass; `pip install -e '.[dev,pii]'` and download the model first
+	pytest -m presidio --no-cov
+
+test-all: test test-integration test-presidio
 
 up:                 ## Start this worktree's isolated stack
 	./scripts/dev-up.sh

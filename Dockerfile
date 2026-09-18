@@ -53,7 +53,13 @@ FROM base AS runtime
 # a cache layer that silently is not one.
 COPY pyproject.toml README.md LICENSE ./
 COPY src ./src
-RUN pip install --no-cache-dir .
+# The `pii` extra (Presidio + spaCy) is baked into the shipped image, not
+# optional here: redacting before anything reaches a model is a §1 guarantee
+# for the running service, even though it's left out of `dev`/CI's fast jobs
+# to keep those quick (see pyproject.toml). Adds real size and build time —
+# accepted cost of shipping the NER layer for real rather than as a maybe.
+RUN pip install --no-cache-dir '.[pii]' \
+    && python -m spacy download en_core_web_sm
 
 RUN useradd --create-home --uid 10001 firsthand
 USER firsthand
