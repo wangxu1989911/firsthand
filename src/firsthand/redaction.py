@@ -126,12 +126,15 @@ def _ner_redact(text: str) -> str:
     if analyzer is None:
         return text
 
-    from presidio_anonymizer import AnonymizerEngine
-    from presidio_anonymizer.entities import OperatorConfig
-
     results = analyzer.analyze(text=text, language="en", entities=list(_NER_ENTITIES))
     if not results:
         return text
+
+    # Imported only once there is something to anonymize, so a "nothing found"
+    # result never depends on presidio-anonymizer being importable at all.
+    from presidio_anonymizer import AnonymizerEngine
+    from presidio_anonymizer.entities import OperatorConfig
+
     operators = {
         entity: OperatorConfig("replace", {"new_value": placeholder})
         for entity, placeholder in _NER_ENTITIES.items()

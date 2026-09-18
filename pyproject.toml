@@ -90,3 +90,10 @@ mypy_path = "src"
 strict = true
 warn_unused_ignores = true
 disallow_untyped_defs = true
+
+# The `pii` extra (presidio + spacy) is intentionally not a `dev` dependency
+# (see pyproject.toml's `pii` group and redaction.py) — mypy runs without it
+# installed, so it has no stubs to check these imports against.
+[[tool.mypy.overrides]]
+module = ["presidio_analyzer.*", "presidio_anonymizer.*"]
+ignore_missing_imports = true
