@@ -1,0 +1,10 @@
+# Findings pinned here are pip's own internal vendored copies — bundled at
+# usr/local/lib/python3.14/site-packages/pip-*.dist-info/licenses/src/pip/_vendor/
+# purely for license attribution, never imported by our code or exercised at
+# runtime. Bumping our own msgpack/setuptools pins in pyproject.toml does not
+# touch this (it's pip's copy, not ours); the fix is pip itself shipping a
+# newer vendored copy. Verified by locating the exact files inside the built
+# image before adding these — re-verify the same way before trusting a future
+# "still applies" assumption, don't just carry these forward by habit.
+GHSA-6v7p-g79w-8964 # msgpack, pip's vendored copy (license-bundle only)
+CVE-2025-47273      # setuptools/pkg_resources, pip's vendored copy (license-bundle only)
