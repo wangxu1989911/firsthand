@@ -46,7 +46,8 @@ not the finish line — see the review gate below.
 
 1. Implement it.
 2. Run the full suite: `make check`, plus `make test-integration` if you touched
-   storage or anything with a container behind it.
+   storage or anything with a container behind it, plus `make test-presidio`
+   if you touched redaction's NER layer.
 3. **Run a code-review pass on the diff and resolve what it finds** — actually
    iterate until it comes back clean, don't skim it (§8.5). 100% coverage proves
    the plumbing runs; it does not prove the judgement behind it was right.
@@ -65,11 +66,22 @@ connector responses mocked from fixtures.
 ## Layout
 
 ```
-src/firsthand/contracts/   §3 shapes — treat as fixed
-src/firsthand/storage/     VectorStore / StateStore + pgvector and Redis defaults
-src/firsthand/config.py    environment-only settings
-src/firsthand/resources.py connection lifecycle, wires drivers to the stores
-src/firsthand/app.py       the FastAPI skeleton (web chat + admin land here in Phase 2)
-tests/unit/                no network, no containers, 100% coverage gate
-tests/integration/         real Postgres + Redis, everything external mocked
+src/firsthand/contracts/    §3 shapes — treat as fixed
+src/firsthand/storage/      VectorStore / StateStore + pgvector and Redis defaults
+src/firsthand/config.py     environment-only settings
+src/firsthand/resources.py  connection lifecycle, wires drivers to the stores
+src/firsthand/redaction.py  raw_text -> redacted_text: pattern pass + optional Presidio NER (§1, §7)
+src/firsthand/secrets.py    encryption for connector credentials + admin session signing (§8.7)
+src/firsthand/llm/          the LLM seam — real client + the recorded-fixture one every test uses
+src/firsthand/orchestrator/ the dedup loop: classify -> clarify -> investigate -> score -> route
+src/firsthand/connectors/   Jira, Git (GitHub), Docs (Confluence) — evidence in, never a conclusion
+src/firsthand/eval/         offline dedup precision/recall vs. a committed baseline (CI-gated)
+src/firsthand/web/          the public chat — transport-agnostic intake seam + the real/stub orchestrator adapter
+src/firsthand/admin/        dashboard, escalation review, connector configuration
+src/firsthand/auth/         admin login, sessions, first-boot bootstrap
+src/firsthand/app.py        the FastAPI app; web + admin are bolted on in web/wiring.py
+tests/unit/                 no network, no containers, 100% coverage gate
+tests/integration/          real Postgres + Redis, everything external mocked
+tests/pii/                  real Presidio/spaCy — skipped unless the `pii` extra + model are installed
+tests/e2e/                  drives the app through a real browser — skipped without one
 ```
